@@ -1,20 +1,203 @@
-<!DOCTYPE html><html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Create your card</title>
-<style>:root{color-scheme:light dark}body{margin:0;font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial;background:#eef3f1}main{max-width:840px;margin:24px auto;padding:0 16px}form{background:#fff;border-radius:16px;padding:24px;box-shadow:0 12px 40px rgba(0,0,0,.08);display:grid;gap:14px}label{font-size:14px;opacity:.8}input,textarea{width:100%;padding:10px 12px;border:1px solid #dcdcdc;border-radius:10px;font:inherit}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.actions{display:flex;gap:12px;align-items:center}button{background:#111;color:#fff;border:0;border-radius:12px;padding:12px 16px;cursor:pointer}.note{opacity:.7;font-size:13px}.out{margin-top:16px}.success{background:#fff;border-radius:12px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.08)}.mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}</style>
-</head><body><main>
-<h1>Create your card</h1>
-<form id="cardForm">
-<div class="row"><div><label>Full name</label><input name="name" required placeholder="Ivica Jakimovski"></div><div><label>Job title</label><input name="title" placeholder="Generalen Direktor"></div></div>
-<div class="row"><div><label>Company</label><input name="company" placeholder="Golden Art"></div><div><label>Phone (intl)</label><input name="phone" required placeholder="+389 70 369 666"></div></div>
-<div class="row"><div><label>Email</label><input name="email" type="email" required placeholder="ivica@goldenart.mk"></div><div><label>Website</label><input name="website" placeholder="https://goldenart.mk"></div></div>
-<div><label>Work address</label><input name="address" placeholder="Street, City, Region, Postal, Country"></div>
-<div><label>Logo (image)</label><input id="logo" type="file" accept="image/*"><div class="note">We’ll optimize the image; optional.</div></div>
-<div class="actions"><button type="submit">Generate</button><span class="note">You’ll get a link like <span class="mono">/card/your-name-1234</span></span></div>
-</form>
-<div id="out" class="out"></div>
-</main>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eef3f1; font-family: ui-sans-serif, -apple-system, system-ui, Segoe UI, Arial; }
+  header { padding: 28px 16px 8px; max-width: 920px; margin: 0 auto; }
+  header h1 { margin: 0; font-size: 28px; }
+  main { max-width: 920px; margin: 12px auto 48px; padding: 0 16px; }
+  .card { background: #fff; border-radius: 16px; padding: 22px; box-shadow: 0 12px 40px rgba(0,0,0,.08); }
+  form { display: grid; gap: 14px; }
+  .row { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 720px) { .row { grid-template-columns: 1fr; } }
+  label { font-size: 13px; opacity: .8; display: block; margin-bottom: 6px; }
+  input[type="text"], input[type="email"], input[type="url"] {
+    width: 100%; padding: 12px 14px; border: 1px solid #d9dee3; border-radius: 12px; font: inherit; background: #f3f6f8;
+  }
+  input[type="file"] { display: block; }
+  .hint { font-size: 12px; opacity: .7; }
+  .actions { display: flex; gap: 12px; align-items: center; margin-top: 6px; }
+  button {
+    background: #111; color: #fff; border: 0; border-radius: 12px; padding: 12px 16px; cursor: pointer;
+  }
+  button[disabled] { opacity: .6; cursor: not-allowed; }
+  .out { margin-top: 16px; }
+  .success, .error {
+    background: #fff; border-radius: 12px; padding: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  }
+  .error { border-left: 4px solid #d63636; }
+  .preview {
+    display: grid; grid-template-columns: 96px 1fr; gap: 16px; align-items: center; margin-top: 6px;
+  }
+  .logo-wrap { width: 96px; height: 96px; border-radius: 50%; background: #111; display: grid; place-items: center; overflow: hidden; }
+  .logo-wrap img { width: 90px; height: 90px; object-fit: cover; border-radius: 50%; background: #fff; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .small { font-size: 13px; opacity: .8; }
+</style>
+</head>
+<body>
+  <header><h1>Create your card</h1></header>
+  <main>
+    <div class="card">
+      <form id="cardForm" novalidate>
+        <div class="row">
+          <div>
+            <label>Full name</label>
+            <input name="name" type="text" required placeholder="Ivica Jakimovski" />
+          </div>
+          <div>
+            <label>Job title</label>
+            <input name="title" type="text" placeholder="Generalen Direktor" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Company</label>
+            <input name="company" type="text" placeholder="Golden Art" />
+          </div>
+          <div>
+            <label>Phone (intl)</label>
+            <input name="phone" type="text" required placeholder="+389 70 369 666" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Email</label>
+            <input name="email" type="email" required placeholder="ivica@goldenart.mk" />
+          </div>
+          <div>
+            <label>Website</label>
+            <input name="website" type="url" placeholder="https://goldenart.mk" />
+          </div>
+        </div>
+
+        <div>
+          <label>Work address</label>
+          <input name="address" type="text" placeholder="Street, City, Region, Postal, Country" />
+        </div>
+
+        <div>
+          <label>Logo (image)</label>
+          <input id="logo" type="file" accept="image/*" />
+          <div class="hint">Optional. We compress it before upload.</div>
+          <div id="preview" class="preview" style="display:none;">
+            <div class="logo-wrap"><img id="previewImg" alt="logo preview" /></div>
+            <div class="small" id="previewInfo"></div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="btn" type="submit">Generate</button>
+          <span class="hint">You’ll get a link like <span class="mono">/card/your-name-1234</span></span>
+        </div>
+      </form>
+
+      <div id="out" class="out"></div>
+    </div>
+  </main>
+
 <script>
-async function toJpegDataUrl(file,max=800,quality=0.9){return new Promise((resolve,reject)=>{const img=new Image();const fr=new FileReader();fr.onload=()=>{img.src=fr.result};fr.onerror=reject;img.onload=()=>{const ratio=Math.min(1,max/Math.max(img.width,img.height));const w=Math.round(img.width*ratio),h=Math.round(img.height*ratio);const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);resolve(c.toDataURL('image/jpeg',quality))};img.onerror=reject;fr.readAsDataURL(file)})}
-document.getElementById('cardForm').addEventListener('submit',async(e)=>{e.preventDefault();const fd=new FormData(e.target);const payload={name:fd.get('name')?.trim(),title:fd.get('title')?.trim(),company:fd.get('company')?.trim(),phone:fd.get('phone')?.trim(),email:fd.get('email')?.trim(),website:fd.get('website')?.trim(),address:fd.get('address')?.trim()};const file=document.getElementById('logo').files[0];if(file)payload.logoDataUrl=await toJpegDataUrl(file);const res=await fetch('/.netlify/functions/create_profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const json=await res.json();const out=document.getElementById('out');if(!res.ok){out.innerHTML='<div class="success">Error: '+(json.message||'Unknown')+'</div>';return}out.innerHTML='<div class="success">Your card is ready:<br><a href="'+json.card_url+'" target="_blank">'+location.origin+json.card_url+'</a><br>Save-contact link: <span class="mono">'+json.vcf_url+'</span></div>'});</script>
-</body></html>
+/* ===== Helpers ===== */
+function normalizePhone(v) {
+  if (!v) return "";
+  return v.replace(/[^\d+]/g, "");
+}
+function dataUrlFromFile(file, max = 900, quality = 0.9) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const fr = new FileReader();
+    fr.onload = () => (img.src = fr.result);
+    fr.onerror = reject;
+    img.onload = () => {
+      const ratio = Math.min(1, max / Math.max(img.width, img.height));
+      const w = Math.round(img.width * ratio), h = Math.round(img.height * ratio);
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+}
+
+/* ===== UI wiring ===== */
+const logoInput = document.getElementById("logo");
+const preview = document.getElementById("preview");
+const previewImg = document.getElementById("previewImg");
+const previewInfo = document.getElementById("previewInfo");
+let logoDataUrl = null;
+
+logoInput.addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) {
+    preview.style.display = "none";
+    logoDataUrl = null;
+    return;
+  }
+  const beforeKB = Math.round(file.size / 1024);
+  logoDataUrl = await dataUrlFromFile(file);
+  const afterKB = Math.round((logoDataUrl.length * 0.75) / 1024); // estimate
+  previewImg.src = logoDataUrl;
+  previewInfo.textContent = `Compressed ${beforeKB} KB → ~${afterKB} KB`;
+  preview.style.display = "grid";
+});
+
+document.getElementById("cardForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("btn");
+  const out = document.getElementById("out");
+  out.innerHTML = "";
+
+  const fd = new FormData(e.target);
+  const payload = {
+    name: (fd.get("name") || "").trim(),
+    title: (fd.get("title") || "").trim(),
+    company: (fd.get("company") || "").trim(),
+    phone: normalizePhone(fd.get("phone") || ""),
+    email: (fd.get("email") || "").trim(),
+    website: (fd.get("website") || "").trim(),
+    address: (fd.get("address") || "").trim(),
+    logoDataUrl: logoDataUrl || undefined
+  };
+
+  if (!payload.name || (!payload.phone && !payload.email)) {
+    out.innerHTML = '<div class="error">Please enter a name and at least a phone or email.</div>';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = "Generating…";
+  try {
+    const res = await fetch("/.netlify/functions/create_profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || "Failed to create profile");
+
+    const url = location.origin + json.card_url;
+    out.innerHTML = `
+      <div class="success">
+        <strong>Your card is ready!</strong><br>
+        <a href="${json.card_url}" target="_blank">${url}</a><br>
+        vCard endpoint: <span class="mono">${json.vcf_url}</span>
+      </div>`;
+  } catch (err) {
+    out.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = "Generate";
+  }
+});
+</script>
+</body>
+</html>
