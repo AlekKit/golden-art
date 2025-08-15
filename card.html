@@ -1,0 +1,30 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card</title>
+<style>:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;background:#e6f0ec;font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial}.phone{width:min(420px,92vw);margin:4vh auto;background:#fff;border-radius:28px;box-shadow:0 20px 70px rgba(0,0,0,.16);overflow:hidden}.hero{background:#111;height:200px;display:grid;place-items:center}.logo{width:120px;height:120px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden}.logo img{width:100%;height:100%;object-fit:cover;display:block}.content{padding:22px 24px}h1{font-size:28px;margin:12px 0 4px}.muted{opacity:.75;margin:0 0 10px}.list{display:grid;gap:18px;margin:18px 0 34px}.item{display:grid;grid-template-columns:56px 1fr;gap:14px;align-items:center}.ico{width:56px;height:56px;border-radius:50%;background:#111;color:#fff;display:grid;place-items:center}.item a,.item span{color:inherit;text-decoration:none;font-size:16px}.bar{background:#111;color:#fff;padding:16px 22px;text-align:center;font-size:17px}.bar a{color:#fff;text-decoration:none;display:block}svg{width:26px;height:26px}</style>
+</head><body>
+<div class="phone">
+<div class="hero"><div class="logo"><img id="logo" alt="logo"></div></div>
+<div class="content">
+  <h1 id="name">—</h1>
+  <div class="muted" id="title"></div>
+  <div class="muted" id="org"></div>
+  <div class="list">
+    <div class="item" id="telRow" style="display:none"><div class="ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.77.62 2.61a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.47-1.19a2 2 0 0 1 2.11-.45c.84.29 1.71.5 2.61.62A2 2 0 0 1 22 16.92z"/></svg>
+    </div><a id="telLink" href="#"></a></div>
+    <div class="item" id="emailRow" style="display:none"><div class="ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2" ry="2"></rect><path d="M3 7l9 6 9-6"></path></svg>
+    </div><a id="emailLink" href="#"></a></div>
+    <div class="item" id="webRow" style="display:none"><div class="ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.71"></path></svg>
+    </div><a id="webLink" href="#" target="_blank" rel="noopener"></a></div>
+    <div class="item" id="adrRow" style="display:none"><div class="ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 5-9 12-9 12S3 15 3 10a9 9 0 1 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+    </div><div><span id="adrText"></span><br/><a id="mapLink" href="#" target="_blank" rel="noopener">Open in Maps</a></div></div>
+  </div>
+</div>
+<div class="bar"><a id="saveBtn" href="#">Save contact</a></div>
+</div>
+<script>(async function(){const slug=location.pathname.split('/').filter(Boolean).pop();const res=await fetch('/.netlify/functions/get_profile?slug='+encodeURIComponent(slug));if(!res.ok){document.body.innerHTML='<p style="padding:24px">Card not found.</p>';return}const p=await res.json();document.getElementById('name').textContent=p.name||'';document.getElementById('title').textContent=p.title||'';document.getElementById('org').textContent=p.company||'';if(p.logo){document.getElementById('logo').src='/.netlify/functions/logo?slug='+encodeURIComponent(p.slug)}if(p.phone){telRow.style.display='grid';const pretty=p.phone.replace(/\s+/g,'').replace(/^\+?389?(\d{2})(\d{3})(\d{3})$/,'+389 $1 $2 $3');telLink.textContent=pretty||p.phone;telLink.href='tel:'+p.phone.replace(/\s+/g,'')}if(p.email){emailRow.style.display='grid';emailLink.textContent=p.email;emailLink.href='mailto:'+p.email}if(p.website){webRow.style.display='grid';const clean=p.website.replace(/^https?:\/\/(www\.)?/,'');webLink.textContent=clean;webLink.href=p.website.startsWith('http')?p.website:('https://'+p.website)}if(p.address){adrRow.style.display='grid';adrText.textContent=p.address;mapLink.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.address)}document.getElementById('saveBtn').href='/.netlify/functions/vcf?slug='+encodeURIComponent(p.slug)})();</script>
+</body></html>

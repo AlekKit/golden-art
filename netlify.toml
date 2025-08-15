@@ -1,0 +1,11 @@
+[build]
+  command = "npm install --silent"
+  publish = "."
+[functions]
+  directory = "netlify/functions"
+  external_node_modules = ["@netlify/blobs"]
+
+[[redirects]]
+  from = "/card/*"
+  to = "/card.html"
+  status = 200
