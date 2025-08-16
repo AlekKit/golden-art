@@ -1,50 +1,72 @@
-import { getStore } from '@netlify/blobs';
-const CORS = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,PUT,OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
-const crlf = (s) => s.replace(/\r?\n/g, '\r\n');
-function wrap76(b64){ return b64.replace(/(.{76})/g,'$1\r\n '); }
-export async function handler(event){
-  if (event.httpMethod === 'OPTIONS') return { statusCode:200, headers: CORS };
-  const slug = event.queryStringParameters.slug;
-  if (!slug) return { statusCode:400, headers:CORS, body:'Missing slug' };
+// netlify/functions/vcf.mjs
+import { neon } from "@netlify/neon";
 
-  const profiles = getStore({ name: 'profiles' });
-  const logos = getStore({ name: 'logos' });
-  const p = await profiles.getJSON(slug + '.json');
-  if (!p) return { statusCode:404, headers:CORS, body:'Not found' };
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
 
-  const tel = (p.phone || '').replace(/\s+/g,'');
-  const url = p.website || '';
-  const adr = p.address || '';
+const crlf  = s => s.replace(/\r?\n/g, "\r\n");
+const wrap76 = b64 => b64.replace(/(.{76})/g, "$1\r\n ");
 
-  let photoBlock = '';
-  if (p.logo){
-    const img = await logos.get(slug + '.jpg', { type: 'arrayBuffer' });
-    if (img){
-      const b64 = Buffer.from(img).toString('base64');
-      photoBlock = 'PHOTO;ENCODING=b;TYPE=JPEG:' + wrap76(b64);
-    }
+export async function handler(event) {
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 200, headers: CORS };
+  }
+  if (event.httpMethod !== "GET") {
+    return { statusCode: 405, headers: CORS, body: "Method Not Allowed" };
   }
 
-  const vcf = crlf(`BEGIN:VCARD
-VERSION:3.0
-N:;${p.name || ''};;;
-FN:${p.name || ''}
-ORG:${p.company || ''}
-TITLE:${p.title || ''}
-${tel ? 'TEL;TYPE=CELL,VOICE:' + tel : ''}
-${p.email ? 'EMAIL;TYPE=INTERNET,WORK:' + p.email : ''}
-${url ? 'URL:' + url : ''}
-${adr ? 'ADR;TYPE=WORK:;;' + adr + ';;;;' : ''}
-${photoBlock}
-END:VCARD`);
+  try {
+    const slug =
+      event.queryStringParameters?.slug ||
+      event.path.split("/").pop();
+    if (!slug) {
+      return { statusCode: 400, headers: CORS, body: "Missing slug" };
+    }
 
-  return {
-    statusCode: 200,
-    headers: {
-      ...CORS,
-      'Content-Type': 'text/vcard; charset=utf-8',
-      'Content-Disposition': `attachment; filename="${slug}.vcf"`
-    },
-    body: vcf
-  };
+    const sql = neon();
+    const { rows } = await sql`
+      SELECT name, title, company, phone, email, website, address, logo_base64
+      FROM profiles WHERE slug = ${slug} LIMIT 1
+    `;
+    if (!rows.length) {
+      return { statusCode: 404, headers: CORS, body: "Not found" };
+    }
+    const p = rows[0];
+
+    const lines = [];
+    lines.push("BEGIN:VCARD", "VERSION:3.0");
+    lines.push(`N:;${p.name || ""};;;`);
+    lines.push(`FN:${p.name || ""}`);
+    if (p.company) lines.push(`ORG:${p.company}`);
+    if (p.title)   lines.push(`TITLE:${p.title}`);
+    if (p.phone)   lines.push(`TEL;TYPE=CELL,VOICE:${(p.phone || "").replace(/\s+/g,"")}`);
+    if (p.email)   lines.push(`EMAIL;TYPE=INTERNET,WORK:${p.email}`);
+    if (p.website) lines.push(`URL:${p.website}`);
+    if (p.address) lines.push(`ADR;TYPE=WORK:;;${p.address};;;;`);
+
+    if (p.logo_base64) {
+      lines.push("PHOTO;ENCODING=b;TYPE=JPEG:" + wrap76(p.logo_base64));
+    }
+    lines.push("END:VCARD");
+
+    const vcf = crlf(lines.join("\n"));
+    return {
+      statusCode: 200,
+      headers: {
+        ...CORS,
+        "Content-Type": "text/vcard; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${slug}.vcf"`,
+      },
+      body: vcf,
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers: CORS,
+      body: JSON.stringify({ error: String(err?.message || err) }),
+    };
+  }
 }
