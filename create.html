@@ -183,7 +183,7 @@ document.getElementById("cardForm").addEventListener("submit", async (e) => {
       body: JSON.stringify(payload)
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.message || "Failed to create profile");
+    if (!res.ok) throw new Error(json.message || json.error || ("HTTP "+res.status));
 
     const url = location.origin + json.card_url;
     out.innerHTML = `
