@@ -1,29 +1,71 @@
-import { getStore } from '@netlify/blobs';
-const CORS = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,PUT,OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
-const ok=(d)=>({statusCode:200,headers:{...CORS,'Content-Type':'application/json'},body:JSON.stringify(d)});
-const err=(c,m)=>({statusCode:c,headers:{...CORS,'Content-Type':'application/json'},body:JSON.stringify({message:m})});
-const slugify=(s)=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+// netlify/functions/create_profile.mjs
+import { neon } from "@netlify/neon";
 
-export async function handler(event){
-  if(event.httpMethod==='OPTIONS')return ok({ok:true});
-  if(event.httpMethod!=='POST')return err(405,'Use POST');
-  const body = JSON.parse(event.body||'{}');
-  const { name, title, company, phone, email, website, address, logoDataUrl } = body;
-  if(!name || !(phone||email)) return err(400,'Name and phone or email are required');
-
-  const slug = slugify(name)+'-'+Math.random().toString(36).slice(2,6);
-  const profiles = getStore({ name:'profiles' });
-  const logos = getStore({ name:'logos' });
-
-  let logo=false;
-  if(logoDataUrl && logoDataUrl.startsWith('data:image/')){
-    const b64 = logoDataUrl.split(',')[1];
-    await logos.set(slug+'.jpg', Buffer.from(b64,'base64'), { contentType:'image/jpeg' });
-    logo=true;
+// This function creates the table if it doesn't exist and inserts one profile.
+// It stores the (optionally compressed) base64 logo in the DB too.
+export async function handler(event) {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const profile = { slug, name, title, company, phone, email, website, address, logo };
-  await profiles.setJSON(slug+'.json', profile);
+  try {
+    const data = JSON.parse(event.body || "{}");
+    if (!data.name || (!data.phone && !data.email)) {
+      return {
+        statusCode: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: "name and (phone or email) are required" })
+      };
+    }
 
-  return ok({ slug, card_url:'/card/'+slug, vcf_url:'/.netlify/functions/vcf?slug='+slug });
+    const sql = neon(); // uses NETLIFY_DATABASE_URL that Netlify set for you
+
+    // Create table once (safe to run every call)
+    await sql`
+      CREATE TABLE IF NOT EXISTS profiles (
+        slug TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        title TEXT,
+        company TEXT,
+        phone TEXT,
+        email TEXT,
+        website TEXT,
+        address TEXT,
+        logo_base64 TEXT
+      )
+    `;
+
+    // Make a slug like "ivica-jakimovski-ab12"
+    const slugBase = (data.name || "")
+      .toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const slug = `${slugBase}-${Math.random().toString(36).slice(2,6)}`;
+
+    await sql`
+      INSERT INTO profiles (slug, name, title, company, phone, email, website, address, logo_base64)
+      VALUES (
+        ${slug},
+        ${data.name || ""},
+        ${data.title || ""},
+        ${data.company || ""},
+        ${data.phone || ""},
+        ${data.email || ""},
+        ${data.website || ""},
+        ${data.address || ""},
+        ${data.logo_base64 || null}
+      )
+    `;
+
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ok: true, slug })
+    };
+  } catch (err) {
+    console.error(err);
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: String(err?.message || err) })
+    };
+  }
 }
