@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin – Card Manager</title>
+  <style>
+    body{margin:0;background:#eef3f1;font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial}
+    header{padding:14px 16px;background:#111;color:#fff;display:flex;gap:12px;align-items:center}
+    header input{max-width:320px;padding:10px 12px;border-radius:10px;border:1px solid #333;background:#1b1b1b;color:#fff}
+    main{max-width:1000px;margin:20px auto;padding:0 16px}
+    .panel{background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.08);padding:16px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
+    .btn{background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    input,textarea{width:100%;padding:10px;border:1px solid #d9dee3;border-radius:10px;background:#f3f6f8}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .muted{opacity:.7}
+    .danger{background:#b21d1d}
+    .ok{background:#1d6b2a}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <header>
+    <div style="font-weight:600">Admin – Cards</div>
+    <input id="adminKey" placeholder="Admin key" />
+    <button class="btn" id="saveKey">Use key</button>
+    <input id="q" placeholder="Search name/company/email/phone" style="margin-left:auto;" />
+    <button class="btn" id="search">Search</button>
+  </header>
+
+  <main>
+    <div class="panel">
+      <table id="tbl">
+        <thead><tr><th>Name</th><th>Company</th><th>Phone</th><th>Email</th><th>Links</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div style="margin-top:10px" class="actions">
+        <button class="btn" id="prev">Prev</button>
+        <button class="btn" id="next">Next</button>
+        <span class="muted" id="status"></span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h3>Edit</h3>
+      <form id="f" class="row">
+        <input type="hidden" id="slug" />
+        <div><label>Name</label><input id="name" required></div>
+        <div><label>Title</label><input id="title"></div>
+        <div><label>Company</label><input id="company"></div>
+        <div><label>Phone</label><input id="phone"></div>
+        <div><label>Email</label><input id="email" type="email"></div>
+        <div><label>Website</label><input id="website" placeholder="https://..."></div>
+        <div class="row3" style="grid-column:1/-1">
+          <div style="grid-column:1/-1"><label>Address</label><input id="address"></div>
+          <div><label>Logo (JPEG &lt;1MB)</label><input id="logo" type="file" accept="image/*"></div>
+          <div><img id="preview" class="hidden" style="width:90px;height:90px;border-radius:50%;object-fit:cover;background:#fff" /></div>
+        </div>
+        <div class="actions" style="grid-column:1/-1;margin-top:10px">
+          <button class="btn ok" id="save">Save changes</button>
+          <button class="btn danger" id="del" type="button">Delete</button>
+          <span class="muted" id="msg"></span>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const API = {
+      list:  (q,offset=0,limit=20)=> fetch(\`/.netlify/functions/list_profiles?q=\${encodeURIComponent(q||'')}&offset=\${offset}&limit=\${limit}\`, { headers: authHeaders() }).then(r=>r.json()),
+      get:   (slug)=> fetch(\`/.netlify/functions/get_profile?slug=\${encodeURIComponent(slug)}\`).then(r=>r.json()),
+      save:  (slug,payload)=> fetch(\`/.netlify/functions/update_profile?slug=\${encodeURIComponent(slug)}\`, { method:'PUT', headers: { ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify(payload) }).then(r=>r.json()),
+      del:   (slug)=> fetch(\`/.netlify/functions/delete_profile?slug=\${encodeURIComponent(slug)}\`, { method:'DELETE', headers: authHeaders() }).then(r=>r.json()),
+    };
+
+    function authHeaders(){
+      const k = localStorage.getItem('ADMIN_KEY') || '';
+      return { 'x-admin-key': k };
+    }
+
+    // Option B (no env var, weak): replace authHeaders() with:
+    // function authHeaders(){ return { 'x-admin-key': 'YOUR_WEAK_PIN' }; }
+
+    async function compressToBase64(file, maxSide=900, quality=0.85){
+      return new Promise((res,rej)=>{
+        const img=new Image(), fr=new FileReader();
+        fr.onload=()=>img.src=fr.result; fr.onerror=rej;
+        img.onload=()=>{
+          const s=Math.min(1,maxSide/Math.max(img.width,img.height));
+          const c=document.createElement('canvas'); c.width=img.width*s; c.height=img.height*s;
+          const ctx=c.getContext('2d'); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
+          ctx.drawImage(img,0,0,c.width,c.height);
+          const dataUrl=c.toDataURL('image/jpeg',quality);
+          res(dataUrl.split(',')[1]); // base64 only
+        };
+        img.onerror=rej; fr.readAsDataURL(file);
+      });
+    }
+
+    let offset=0, limit=20, currentSlug=null;
+
+    async function load(){
+      const q=$('#q').value.trim();
+      const rows=await API.list(q,offset,limit);
+      const tbody=$('#tbl tbody');
+      tbody.innerHTML='';
+      rows.forEach(r=>{
+        const tr=document.createElement('tr');
+        const cardUrl=\`/card/\${r.slug}\`;
+        const vcfUrl=\`/.netlify/functions/vcf?slug=\${r.slug}\`;
+        tr.innerHTML=\`
+          <td>\${r.name||''}</td>
+          <td>\${r.company||''}</td>
+          <td>\${r.phone||''}</td>
+          <td>\${r.email||''}</td>
+          <td><a href="\${cardUrl}" target="_blank">Card</a> · <a href="\${vcfUrl}" target="_blank">vCard</a></td>
+          <td class="actions"><button class="btn" data-slug="\${r.slug}">Edit</button></td>\`;
+        tr.querySelector('button').addEventListener('click',()=>edit(r.slug));
+        tbody.appendChild(tr);
+      });
+      $('#status').textContent=\`Showing \${rows.length} items (offset \${offset})\`;
+    }
+
+    async function edit(slug){
+      const p=await API.get(slug);
+      currentSlug=slug;
+      $('#slug').value=slug;
+      $('#name').value=p.name||'';
+      $('#title').value=p.title||'';
+      $('#company').value=p.company||'';
+      $('#phone').value=p.phone||'';
+      $('#email').value=p.email||'';
+      $('#website').value=p.website||'';
+      $('#address').value=p.address||'';
+      if (p.logo_base64){
+        $('#preview').src='data:image/jpeg;base64,'+p.logo_base64;
+        $('#preview').classList.remove('hidden');
+      } else {
+        $('#preview').classList.add('hidden');
+      }
+      $('#msg').textContent='';
+    }
+
+    // Events
+    $('#saveKey').addEventListener('click', ()=>{
+      const k=$('#adminKey').value.trim();
+      if(!k){ alert('Enter admin key'); return; }
+      localStorage.setItem('ADMIN_KEY', k);
+      load();
+    });
+
+    $('#search').addEventListener('click', ()=>{ offset=0; load(); });
+    $('#prev').addEventListener('click', ()=>{ offset=Math.max(0,offset-limit); load(); });
+    $('#next').addEventListener('click', ()=>{ offset+=limit; load(); });
+
+    $('#logo').addEventListener('change', async (e)=>{
+      const f=e.target.files?.[0];
+      if(!f) return;
+      const b64=await compressToBase64(f, 900, 0.85);
+      $('#preview').src='data:image/jpeg;base64,'+b64;
+      $('#preview').classList.remove('hidden');
+      $('#preview').dataset.b64=b64; // stash for saving
+    });
+
+    $('#f').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if(!currentSlug){ alert('Pick a row to edit'); return; }
+      const patch={
+        name: $('#name').value.trim(),
+        title: $('#title').value.trim(),
+        company: $('#company').value.trim(),
+        phone: $('#phone').value.trim(),
+        email: $('#email').value.trim(),
+        website: $('#website').value.trim(),
+        address: $('#address').value.trim()
+      };
+      if ($('#preview').dataset.b64){
+        const approxBytes = Math.floor($('#preview').dataset.b64.length * 0.75);
+        if (approxBytes > 1_000_000) { alert('Logo >1MB after compression; choose a smaller image'); return; }
+        patch.logo_base64 = $('#preview').dataset.b64;
+      }
+      const out = await API.save(currentSlug, patch);
+      if (out.error){ $('#msg').textContent = 'Error: ' + out.error; }
+      else { $('#msg').textContent = 'Saved.'; load(); }
+    });
+
+    $('#del').addEventListener('click', async ()=>{
+      if(!currentSlug) return;
+      if(!confirm('Delete this profile?')) return;
+      const out = await API.del(currentSlug);
+      if (out.error){ $('#msg').textContent='Error: '+out.error; }
+      else { $('#msg').textContent='Deleted.'; currentSlug=null; $('#f').reset(); $('#preview').classList.add('hidden'); load(); }
+    });
+
+    // bootstrap
+    (function init(){
+      const k=localStorage.getItem('ADMIN_KEY')||'';
+      if(k) $('#adminKey').value=k;
+      load();
+    })();
+  </script>
+</body>
+</html>
