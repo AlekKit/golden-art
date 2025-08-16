@@ -1,11 +1,9 @@
 {
-  "name": "netlify-card-starter",
-  "version": "0.1.0",
+  "name": "max-mcard",
+  "version": "1.0.0",
+  "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=18"
-  },
   "dependencies": {
-    "@netlify/blobs": "^6.0.0"
+    "@netlify/neon": "latest"
   }
 }
