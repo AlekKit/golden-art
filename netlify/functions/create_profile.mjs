@@ -56,10 +56,15 @@ export async function handler(event) {
     `;
 
     return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ok: true, slug })
-    };
+  statusCode: 200,
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    ok: true,
+    slug,
+    card_url: `/card/${slug}`,
+    vcf_url: `/.netlify/functions/vcf?slug=${slug}`
+  })
+};
   } catch (err) {
     console.error(err);
     return {
