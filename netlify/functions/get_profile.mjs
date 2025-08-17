@@ -7,16 +7,22 @@ const CORS = {
 };
 
 export async function handler(event) {
-  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers: CORS };
-  if (event.httpMethod !== "GET") return { statusCode: 405, headers: CORS, body: "Method Not Allowed" };
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 200, headers: CORS };
+  }
+  if (event.httpMethod !== "GET") {
+    return { statusCode: 405, headers: CORS, body: "Method Not Allowed" };
+  }
 
   try {
-    const slug = event.queryStringParameters?.slug || event.path.split("/").pop();
-    if (!slug) return { statusCode: 400, headers: CORS, body: "Missing slug" };
+    const slug =
+      event.queryStringParameters?.slug || event.path.split("/").pop();
+    if (!slug) {
+      return { statusCode: 400, headers: CORS, body: "Missing slug" };
+    }
 
     const sql = neon();
 
-    // Ensure table exists (safe to run every call)
     await sql`CREATE TABLE IF NOT EXISTS profiles (
       slug TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -29,7 +35,7 @@ export async function handler(event) {
       logo_base64 TEXT
     )`;
 
-    // NOTE: @netlify/neon returns an array, not { rows }
+    // @netlify/neon returns an array, not { rows }
     const rows = await sql`
       SELECT slug, name, title, company, phone, email, website, address, logo_base64
       FROM profiles
