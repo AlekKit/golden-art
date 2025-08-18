@@ -337,11 +337,21 @@ async function onLogoChange(e){
   if (approxBytes > 1_000_000){ alert('Logo still too big after compression. Choose a smaller image.'); stagedBase64=null; $('#logo').value=''; }
 }
 
+/* helper: remove empty fields so we don't send an empty SET to SQL */
+function cleanedPayload(obj){
+  const out = {};
+  for (const [k,v] of Object.entries(obj)){
+    if (k === 'logo_base64'){ if (v) out[k]=v; continue; }
+    if (v !== '' && v !== null && v !== undefined) out[k] = v;
+  }
+  return out;
+}
+
 /* Save (create or edit) */
 async function onSave(e){
   e.preventDefault();
   const msg=$('#msg'); msg.textContent='';
-  const payload = {
+  const raw = {
     name: $('#name').value.trim(),
     title: $('#title').value.trim(),
     company: $('#company').value.trim(),
@@ -350,7 +360,9 @@ async function onSave(e){
     website: $('#website').value.trim(),
     address: $('#address').value.trim()
   };
-  if (stagedBase64) payload.logo_base64 = stagedBase64;
+  if (stagedBase64) raw.logo_base64 = stagedBase64;
+
+  const payload = cleanedPayload(raw);
 
   try{
     if (mode==='create'){
@@ -360,6 +372,7 @@ async function onSave(e){
       toast('Created'); closeModal(); load();
     } else {
       const slug = $('#slug').value;
+      if (Object.keys(payload).length === 0){ msg.textContent = 'Nothing to update.'; return; }
       const out = await API.update(slug, payload);
       if (out.error) throw new Error(out.error);
       toast('Saved'); closeModal(); load();
