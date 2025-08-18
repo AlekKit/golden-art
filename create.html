@@ -17,6 +17,7 @@
     --shadow:0 30px 80px rgba(0,0,0,.14);
     --shadow-sm:0 10px 30px rgba(0,0,0,.08);
     --accent:#0ea5e9;
+    --ok:#10b981; --err:#ef4444;
   }
   @media (prefers-color-scheme: dark){
     :root{
@@ -131,9 +132,10 @@
     background:var(--input-bg); border:1px dashed var(--input-br);
     border-radius:14px; padding:12px 14px;
   }
-
-  /* Hide vCard link */
   #result a[href*="/.netlify/functions/vcf"]{display:none!important}
+
+  .msg{font-size:13px;margin-top:6px}
+  .ok{color:var(--ok)} .err{color:var(--err)}
 </style>
 </head>
 <body>
@@ -147,13 +149,13 @@
     </header>
 
     <div class="card">
-      <form id="createForm" onsubmit="return false;">
+      <form id="createForm">
         <div class="grid-2">
           <div>
             <label for="name">Full name</label>
             <div class="field">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5 0-9 2.5-9 5.5V22h18v-2.5C21 16.5 17 14 12 14Z"/></svg>
-              <input id="name" type="text" placeholder="Enter full name"/>
+              <input id="name" type="text" placeholder="Enter full name" required/>
             </div>
           </div>
           <div>
@@ -202,7 +204,7 @@
         <div>
           <label for="address">Address</label>
           <div class="field">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 0 0 1 12 11.5Z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"/></svg>
             <input id="address" type="text" placeholder="Street, City, Country"/>
           </div>
         </div>
@@ -220,16 +222,17 @@
         </div>
 
         <div class="actions">
-          <button id="generateBtn" class="btn">Generate</button>
+          <button id="generateBtn" type="button" class="btn">Generate</button>
           <span class="note">After generating, you’ll get the card URL below.</span>
         </div>
 
-        <div id="result"></div>
+        <div id="result" aria-live="polite"></div>
       </form>
     </div>
   </div>
 
   <script>
+    // Preview
     const fileInput = document.getElementById('logo');
     const previewImg = document.getElementById('preview');
     fileInput?.addEventListener('change', () => {
@@ -238,6 +241,120 @@
       const r = new FileReader();
       r.onload = e => previewImg.src = e.target.result;
       r.readAsDataURL(f);
+    });
+
+    // Helpers
+    const el = id => document.getElementById(id);
+    const resultBox = el('result');
+    const btn = el('generateBtn');
+
+    // Compress an image to ~maxKB using canvas
+    async function compressImage(file, maxKB = 350) {
+      if (!file) return null;
+      const dataURL = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result);
+        reader.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+
+      const img = await new Promise((res, rej) => {
+        const im = new Image();
+        im.onload = () => res(im);
+        im.onerror = rej;
+        im.src = dataURL;
+      });
+
+      const canvas = document.createElement('canvas');
+      // scale longest side to 900px for good balance
+      const maxSide = 900;
+      const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+      canvas.width = Math.round(img.width * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      let q = 0.85, out = canvas.toDataURL('image/jpeg', q);
+      const target = maxKB * 1024;
+      while (out.length > target && q > 0.5) {
+        q -= 0.08;
+        out = canvas.toDataURL('image/jpeg', q);
+      }
+      return out; // base64 data URL
+    }
+
+    function slugify(name){
+      return (name || 'card')
+        .toLowerCase().trim()
+        .replace(/[^a-z0-9]+/g,'-')
+        .replace(/^-+|-+$/g,'')
+        .slice(0,50) + '-' + Math.random().toString(36).slice(2,6);
+    }
+
+    function setBusy(b){
+      btn.disabled = b;
+      btn.textContent = b ? 'Generating…' : 'Generate';
+    }
+
+    function showError(msg){
+      resultBox.innerHTML = `<div class="msg err">❌ ${msg}</div>`;
+    }
+    function showSuccess(cardUrl){
+      resultBox.innerHTML =
+        `<div class="msg ok">✅ Your card is ready!<br>
+           <a href="${cardUrl}">${cardUrl}</a>
+         </div>`;
+    }
+
+    // Main click handler
+    btn.addEventListener('click', async () => {
+      const name = el('name').value.trim();
+      const title = el('title').value.trim();
+      const company = el('company').value.trim();
+      const phone = el('phone').value.trim();
+      const email = el('email').value.trim();
+      const website = el('website').value.trim();
+      const address = el('address').value.trim();
+
+      if (!name) { showError('Please enter a name.'); return; }
+      if (!phone && !email) { showError('Enter at least a phone or an email.'); return; }
+
+      setBusy(true);
+      resultBox.textContent = '';
+
+      try {
+        // compress image (optional)
+        let logoDataUrl = null;
+        const f = fileInput?.files?.[0];
+        if (f) logoDataUrl = await compressImage(f, 380);
+
+        const payload = {
+          name, title, company, phone, email, website, address,
+          logo: logoDataUrl, // may be null
+          slug: slugify(name)
+        };
+
+        const res = await fetch('/.netlify/functions/create_profile', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const t = await res.text().catch(()=> '');
+          throw new Error(`Server error (${res.status}): ${t || 'failed to create profile'}`);
+        }
+
+        const data = await res.json();
+        const slug = data.slug || payload.slug;
+        const cardUrl = `${location.origin}/card/${slug}`;
+
+        showSuccess(cardUrl);
+      } catch (e) {
+        showError(e.message || 'Failed to create profile.');
+      } finally {
+        setBusy(false);
+      }
     });
   </script>
 </body>
