@@ -1,267 +1,162 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Smart Contact Card</title>
-<meta name="description" content="Create a beautiful, iOS-ready vCard page in seconds. Share one link that lets people save your contact instantly.">
-<style>
-  /* ===== Theme tokens ===== */
-  :root{
-    --bg1:#eef3f1; --bg2:#f7faf8;
-    --panel:#ffffff; --panel-br:rgba(15,23,32,.08);
-    --text:#0f1720; --muted:#66737e;
-    --accent:#0ea5e9; --accent2:#7c8ef3;
-    --btn:#111111; --btnText:#ffffff;
-    --shadow-xl:0 40px 120px rgba(0,0,0,.16);
-    --shadow:0 18px 50px rgba(0,0,0,.10);
-    --shadow-sm:0 10px 28px rgba(0,0,0,.08);
-    --ring:#1f2937;
-    --link:#0f1720;
-  }
-  @media (prefers-color-scheme: dark){
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smart Contact Card</title>
+  <style>
+    /* ===== Theme tokens ===== */
     :root{
-      --bg1:#0b1014; --bg2:#0f171c;
-      --panel:#10171c; --panel-br:rgba(255,255,255,.08);
-      --text:#eef3f1; --muted:#a7b2bb;
-      --accent:#38bdf8; --accent2:#a5b4ff;
-      --btn:#e9e9e9; --btnText:#0b0b0b;
-      --shadow-xl:0 40px 120px rgba(0,0,0,.55);
-      --shadow:0 18px 50px rgba(0,0,0,.4);
-      --shadow-sm:0 10px 28px rgba(0,0,0,.35);
-      --link:#e7ecea;
+      --bg1:#e8f0ec; --bg2:#f6faf8;
+      --panel:#ffffff; --panel-border:rgba(15,23,32,.08);
+      --text:#0f1720; --muted:#66737e;
+      --btn:#111111; --btnText:#ffffff;
+      --shadow:0 20px 60px rgba(0,0,0,.12);
+      --accent:#0ea5e9;
     }
-  }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg1:#0b1014; --bg2:#0f171c;
+        --panel:#12181d; --panel-border:rgba(255,255,255,.06);
+        --text:#eef3f1; --muted:#a7b2bb;
+        --btn:#e9e9e9; --btnText:#0b0b0b;
+        --shadow:0 20px 60px rgba(0,0,0,.45);
+        --accent:#38bdf8;
+      }
+    }
 
-  *{box-sizing:border-box}
-  html,body{margin:0}
-  body{
-    color:var(--text);
-    font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial;
-    background:
-      radial-gradient(1200px 700px at -10% -10%, var(--bg2), transparent 55%),
-      radial-gradient(1200px 700px at 110% -10%, var(--bg2), transparent 55%),
-      linear-gradient(180deg, var(--bg1), var(--bg2));
-    min-height:100dvh;
-  }
-  a{color:var(--link);text-decoration:none}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial;
+      background:linear-gradient(180deg,var(--bg1),var(--bg2));
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
 
-  .container{max-width:1200px;margin:0 auto;padding:0 22px}
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:20px 40px;
+    }
+    .logo{
+      display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px;
+    }
+    .logoDot{
+      width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);
+    }
+    header nav a{
+      margin-left:20px;text-decoration:none;color:var(--text);font-weight:500;
+    }
+    .ctaBtn{
+      background:var(--btn);color:var(--btnText);
+      padding:10px 18px;border-radius:10px;text-decoration:none;
+      font-weight:600;box-shadow:var(--shadow);
+      transition:transform .08s ease,opacity .15s ease;
+    }
+    .ctaBtn:hover{transform:translateY(-1px);opacity:.95}
 
-  /* Top nav (no admin link) */
-  .nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
-  .brand{display:flex;align-items:center;gap:10px}
-  .dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px var(--accent)}
-  .brand h1{font-size:18px;margin:0}
-  .btn{
-    background:var(--btn);color:var(--btnText);border:0;
-    display:inline-flex;align-items:center;gap:8px;
-    padding:12px 18px;border-radius:14px;font-weight:600;
-    box-shadow:var(--shadow-sm);transition:transform .06s ease,opacity .15s ease;
-  }
-  .btn:hover{transform:translateY(-1px);opacity:.96}
+    /* Hero */
+    .hero{
+      flex:1;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      align-items:center;
+      gap:40px;
+      max-width:1200px;
+      margin:0 auto;
+      padding:60px 40px;
+    }
+    .heroText h1{
+      font-size:42px;line-height:1.2;margin-bottom:18px;
+    }
+    .heroText p{font-size:18px;color:var(--muted);margin-bottom:28px}
+    .heroImg{
+      display:flex;justify-content:center;
+    }
+    .phoneMockup{
+      width:300px;height:560px;
+      border:10px solid #111;border-radius:32px;
+      background:#fff;box-shadow:var(--shadow);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .phoneMockup span{color:#aaa;font-size:14px}
 
-  /* ===== Hero ===== */
-  .hero{padding:40px 0 28px}
-  .heroWrap{
-    background:var(--panel);
-    border:1px solid var(--panel-br);
-    border-radius:28px;
-    padding:40px 34px;
-    box-shadow:var(--shadow-xl);
-    position:relative;
-    overflow:hidden;
-  }
-  .heroWrap::after{
-    content:"";
-    position:absolute; inset:-40% -20% auto auto; 
-    width:60%; height:120%;
-    background:radial-gradient(600px 600px at 70% 20%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
-               radial-gradient(600px 600px at 100% 0%, color-mix(in srgb, var(--accent2) 14%, transparent), transparent 60%);
-    pointer-events:none;
-    filter:saturate(130%);
-  }
-  .heroGrid{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center}
-  @media (max-width:980px){.heroGrid{grid-template-columns:1fr}}
-  .eyebrow{color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 8px}
-  .title{font-size:42px;line-height:1.08;margin:0 0 14px}
-  .subtitle{color:var(--muted);margin:0 0 22px;max-width:56ch}
-  .ctaRow{display:flex;gap:12px;flex-wrap:wrap}
+    /* Features */
+    .features{
+      background:var(--panel);
+      border-top:1px solid var(--panel-border);
+      padding:60px 20px;
+    }
+    .features h2{text-align:center;font-size:28px;margin-bottom:40px}
+    .grid{
+      display:grid;gap:30px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      max-width:1100px;margin:0 auto;
+    }
+    .feature{
+      background:var(--panel);
+      border:1px solid var(--panel-border);
+      border-radius:16px;
+      padding:24px;
+      box-shadow:var(--shadow);
+    }
+    .feature h3{margin-bottom:10px;font-size:18px}
+    .feature p{color:var(--muted);font-size:15px}
 
-  /* Phone mock (pure CSS/SVG) */
-  .phone{
-    width:100%;max-width:380px;margin-inline:auto;
-    aspect-ratio:9/18; position:relative; filter:drop-shadow(0 18px 40px rgba(0,0,0,.22));
-  }
-  .device{
-    position:absolute; inset:0; border-radius:36px; background:#0f0f10;
-    border:10px solid #1b1b1d;
-  }
-  .screen{
-    position:absolute; inset:10px; border-radius:26px; background:#fff; overflow:hidden;
-  }
-  @media (prefers-color-scheme: dark){.screen{background:#0f151a}}
-  .status{height:22px;background:linear-gradient(180deg,#eaeaea,#dcdcdc);opacity:.75}
-  @media (prefers-color-scheme: dark){.status{background:#0c1014;opacity:.9}}
-  .heroCard{
-    padding:18px;
-  }
-  .heroBar{height:96px;background:#111;border-radius:14px 14px 10px 10px;display:grid;place-items:center}
-  @media (prefers-color-scheme: dark){.heroBar{background:#0e0e0e}}
-  .badge{width:70px;height:70px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:800}
-  .info{padding:14px}
-  .nameLine{height:14px;border-radius:999px;background:#1112;margin:6px 0 12px}
-  @media (prefers-color-scheme: dark){.nameLine{background:#fff2}}
-  .row{display:flex;align-items:center;gap:10px;margin:10px 0}
-  .dotIco{width:14px;height:14px;border-radius:50%;background:#111}
-  @media (prefers-color-scheme: dark){.dotIco{background:#e9e9e9}}
-  .save{
-    margin-top:10px; display:block; text-align:center; border-radius:12px;
-    background:#111; color:#fff; padding:10px 12px; font-size:12px
-  }
-  @media (prefers-color-scheme: dark){.save{background:#e9e9e9;color:#0b0b0b}}
-
-  /* Logos row */
-  .logos{display:flex;gap:20px;flex-wrap:wrap;align-items:center;justify-content:center;
-    color:var(--muted);font-size:14px;margin:22px 0 6px}
-  .logos small{opacity:.8}
-
-  /* Features */
-  .section{padding:38px 0}
-  .section h2{margin:0 0 6px;text-align:center}
-  .section p.lead{color:var(--muted);margin:0 0 18px;text-align:center}
-  .grid{display:grid;gap:18px;grid-template-columns:repeat(3,1fr)}
-  @media (max-width: 960px){.grid{grid-template-columns:1fr 1fr}}
-  @media (max-width: 640px){.grid{grid-template-columns:1fr}}
-  .feature{
-    background:var(--panel);border:1px solid var(--panel-br);border-radius:18px;padding:18px;
-    box-shadow:var(--shadow)
-  }
-  .feature h3{margin:8px 0 6px;font-size:18px}
-  .feature p{margin:0;color:var(--muted)}
-
-  /* CTA band */
-  .callout{
-    margin:28px 0 10px;
-    background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 85%, #fff), color-mix(in srgb, var(--accent2) 85%, #fff));
-    color:#07121a;border-radius:18px;padding:22px;box-shadow:var(--shadow);
-  }
-  .calloutRow{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
-  .callout .btn{background:#07121a;color:#fff}
-  @media (prefers-color-scheme: dark){.callout .btn{background:#e9e9e9;color:#0b0b0b}}
-
-  /* Footer */
-  footer{margin-top:26px;padding:24px 0;color:var(--muted);border-top:1px solid var(--panel-br)}
-  .footgrid{display:grid;gap:16px;grid-template-columns:2fr 1fr 1fr}
-  @media (max-width: 820px){.footgrid{grid-template-columns:1fr}}
-  footer a{color:var(--muted)}
-  .small{font-size:12px}
-</style>
+    /* Footer */
+    footer{
+      text-align:center;
+      padding:20px;
+      font-size:14px;
+      color:var(--muted);
+      border-top:1px solid var(--panel-border);
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Nav -->
-    <nav class="nav">
-      <div class="brand">
-        <span class="dot"></span>
-        <h1>Smart Contact Card</h1>
-      </div>
-      <a class="btn" href="/create.html">Create your card</a>
+  <header>
+    <div class="logo"><span class="logoDot"></span> Smart Contact Card</div>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="/create.html" class="ctaBtn">Create your card</a>
     </nav>
+  </header>
 
-    <!-- Hero -->
-    <section class="hero">
-      <div class="heroWrap">
-        <div class="heroGrid">
-          <div>
-            <p class="eyebrow">Always ready to connect</p>
-            <h2 class="title">One elegant link that saves your details instantly.</h2>
-            <p class="subtitle">Share your details with a single, beautiful page. Includes a genuine <strong>“Save contact”</strong> action that works on iPhone and everywhere else.</p>
-            <div class="ctaRow">
-              <a class="btn" href="/create.html">Create your card</a>
-            </div>
-          </div>
-
-          <!-- Phone mock -->
-          <div class="phone" aria-hidden="true">
-            <div class="device"></div>
-            <div class="screen">
-              <div class="status"></div>
-              <div class="heroCard">
-                <div class="heroBar"><div class="badge">GA</div></div>
-                <div class="info">
-                  <div class="nameLine" style="width:70%"></div>
-                  <div class="nameLine" style="width:40%;margin-top:4px"></div>
-                  <div class="row"><span class="dotIco"></span><div class="nameLine" style="width:65%"></div></div>
-                  <div class="row"><span class="dotIco"></span><div class="nameLine" style="width:54%"></div></div>
-                  <div class="row"><span class="dotIco"></span><div class="nameLine" style="width:48%"></div></div>
-                  <span class="save">Save contact</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Logos row -->
-        <div class="logos">
-          <small>Trusted by professionals at leading companies</small>
-          · Unsplash · Notion · Intercom · Descript · Grammarly
-        </div>
+  <section class="hero">
+    <div class="heroText">
+      <h1>One elegant link that saves your details instantly</h1>
+      <p>Share your contact info with a single, beautiful page. Includes a genuine <strong>Save contact</strong> action that works on iPhone and everywhere else.</p>
+      <a href="/create.html" class="ctaBtn">Create your card</a>
+    </div>
+    <div class="heroImg">
+      <div class="phoneMockup">
+        <span>Card preview</span>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Features -->
-    <section class="section">
-      <h2>Powerful features for seamless networking</h2>
-      <p class="lead">Everything you need to share your info fast — without headaches.</p>
-      <div class="grid">
-        <div class="feature">
-          <h3>Instant sharing</h3>
-          <p>One link that works in QR codes, NFC, chat apps, emails and more.</p>
-        </div>
-        <div class="feature">
-          <h3>Always up to date</h3>
-          <p>Edit your details later and your card link stays the same.</p>
-        </div>
-        <div class="feature">
-          <h3>iOS-ready vCard</h3>
-          <p>Standards-compliant .vcf with photo, phone, email, website and address.</p>
-        </div>
+  <section class="features" id="features">
+    <h2>Powerful features for seamless networking</h2>
+    <div class="grid">
+      <div class="feature">
+        <h3>Instant sharing</h3>
+        <p>One link works in QR codes, NFC, chat apps, emails — no complicated setup required.</p>
       </div>
-    </section>
-
-    <!-- CTA band -->
-    <section class="callout">
-      <div class="calloutRow">
-        <p><strong>Ready to make yours?</strong> Create a card in under a minute.</p>
-        <a class="btn" href="/create.html">Create your card</a>
+      <div class="feature">
+        <h3>Always up to date</h3>
+        <p>Edit your details later and your card link stays the same — always showing the latest info.</p>
       </div>
-    </section>
-
-    <!-- Footer -->
-    <footer>
-      <div class="footgrid">
-        <div>
-          <div class="brand" style="margin-bottom:8px">
-            <span class="dot"></span><strong>Smart Contact Card</strong>
-          </div>
-          <p class="small">A tiny tool for instantly shareable contact pages with real iOS vCard support.</p>
-        </div>
-        <div>
-          <strong class="small">Product</strong><br/>
-          <a href="/create.html">Create a card</a><br/>
-          <a href="/card/demo" aria-disabled="true" style="opacity:.6;pointer-events:none">Demo (soon)</a>
-        </div>
-        <div>
-          <strong class="small">Legal</strong><br/>
-          <a href="#" aria-disabled="true" style="opacity:.6;pointer-events:none">Privacy</a><br/>
-          <a href="#" aria-disabled="true" style="opacity:.6;pointer-events:none">Terms</a>
-        </div>
+      <div class="feature">
+        <h3>iOS-ready vCard</h3>
+        <p>Standards-compliant .vcf with photo, phone, email, website, and address that saves directly to Contacts.</p>
       </div>
-      <p class="small" style="margin-top:12px">&copy; <span id="y"></span> Smart Contact Card. All rights reserved.</p>
-    </footer>
-  </div>
+    </div>
+  </section>
 
-  <script>document.getElementById('y').textContent=new Date().getFullYear();</script>
+  <footer>
+    © 2025 Smart Contact Card. All rights reserved.
+  </footer>
 </body>
 </html>
