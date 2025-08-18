@@ -5,48 +5,124 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Create Card</title>
   <style>
-    :root { color-scheme: light dark; }
-    body{margin:0;background:#eef3f1;font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial}
-    main{max-width:920px;margin:28px auto;padding:0 16px}
-    h1{font-size:28px;margin:0 0 14px}
-    .panel{background:#fff;border-radius:16px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.08)}
-    form{display:grid;gap:14px}
+    :root{
+      color-scheme: light dark;
+      --bg1:#e8f0ec; --bg2:#f6faf8;
+      --panel:#ffffff; --panel-br:#d9dee3;
+      --text:#0f1720; --muted:#66737e;
+      --input-bg:#f3f6f8; --input-br:#d9dee3;
+      --accent:#0ea5e9;
+      --shadow:0 18px 60px rgba(0,0,0,.10);
+      --shadow-sm:0 10px 30px rgba(0,0,0,.08);
+      --btn:#111; --btnText:#fff;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg1:#0b1014; --bg2:#0f171c;
+        --panel:#12181d; --panel-br:#26323b;
+        --text:#eef3f1; --muted:#a7b2bb;
+        --input-bg:#0f151a; --input-br:#26323b;
+        --accent:#38bdf8;
+        --shadow:0 18px 60px rgba(0,0,0,.55);
+        --shadow-sm:0 10px 30px rgba(0,0,0,.35);
+        --btn:#e9e9e9; --btnText:#0b0b0b;
+      }
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 600px at -10% -10%, var(--bg2), transparent 60%),
+        radial-gradient(1000px 600px at 110% 0%, var(--bg2), transparent 60%),
+        linear-gradient(180deg,var(--bg1),var(--bg2));
+      min-height:100dvh;
+    }
+
+    /* Header */
+    .wrap{max-width:980px;margin:28px auto;padding:0 16px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .titleRow{display:flex;align-items:center;gap:10px}
+    .dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 16px var(--accent)}
+    h1{font-size:28px;margin:0}
+    .backLink{
+      text-decoration:none;font-weight:600;font-size:14px;
+      background:transparent;color:var(--text);
+      border:1px solid var(--panel-br); padding:8px 12px; border-radius:10px;
+      box-shadow:var(--shadow-sm); transition:transform .06s ease,opacity .15s ease;
+    }
+    .backLink:hover{transform:translateY(-1px);opacity:.95}
+
+    /* Card */
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--panel-br);
+      border-radius:18px;
+      padding:20px;
+      box-shadow:var(--shadow);
+    }
+
+    form{display:grid;gap:16px}
     .row{display:grid;gap:12px;grid-template-columns:1fr 1fr}
     @media(max-width:760px){.row{grid-template-columns:1fr}}
-    label{font-size:13px;opacity:.8;margin-bottom:6px;display:block}
-    input[type=text],input[type=email],input[type=url]{width:100%;padding:12px 14px;border:1px solid #d9dee3;border-radius:12px;background:#f3f6f8}
+
+    label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
+    input[type=text],input[type=email],input[type=url],input[type=tel]{
+      width:100%;padding:12px 14px;border:1px solid var(--input-br);
+      border-radius:12px;background:var(--input-bg);color:inherit;outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    input:focus{border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent)}
+
     input[type=file]{display:block}
-    .actions{display:flex;gap:10px;flex-wrap:wrap}
-    button{background:#111;color:#fff;border:0;border-radius:12px;padding:12px 16px;cursor:pointer}
-    .ok,.err{margin-top:10px;border-radius:12px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.08)}
-    .ok{background:#fff}
-    .err{background:#fff;border-left:4px solid #d33}
+
     .preview{display:grid;grid-template-columns:96px 1fr;gap:16px;align-items:center;margin-top:6px}
-    .logo{width:96px;height:96px;border-radius:50%;background:#111;display:grid;place-items:center;overflow:hidden}
+    .logo{width:96px;height:96px;border-radius:50%;background:#111;display:grid;place-items:center;overflow:hidden;box-shadow:var(--shadow-sm)}
     .logo img{width:90px;height:90px;border-radius:50%;object-fit:cover;background:#fff}
-    .hint{font-size:12px;opacity:.7}
+    .hint{font-size:12px;color:var(--muted)}
+
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    button{
+      background:var(--btn);color:var(--btnText);border:0;border-radius:12px;
+      padding:12px 16px;cursor:pointer;box-shadow:var(--shadow-sm);
+      transition:transform .06s ease,opacity .15s ease;
+    }
+    button:hover{transform:translateY(-1px);opacity:.96}
+    button[disabled]{opacity:.6;cursor:not-allowed}
+
+    .ok,.err{margin-top:10px;border-radius:12px;padding:12px;box-shadow:var(--shadow-sm);background:var(--panel)}
+    .err{border-left:4px solid #d33}
+
   </style>
 </head>
 <body>
-  <main>
-    <h1>Create your card</h1>
+  <div class="wrap">
+    <header>
+      <div class="titleRow">
+        <span class="dot"></span>
+        <h1>Create your card</h1>
+      </div>
+      <a class="backLink" href="/">← Back to homepage</a>
+    </header>
+
     <div class="panel">
       <form id="createForm">
         <div class="row">
-          <div><label for="name">Full name</label><input id="name" type="text" placeholder="Ivica Jakimovski" required></div>
-          <div><label for="title">Job title</label><input id="title" type="text" placeholder="Generalen Direktor"></div>
+          <div><label for="name">Full name</label><input id="name" type="text" placeholder="Full name" required></div>
+          <div><label for="title">Job title</label><input id="title" type="text" placeholder="Job title"></div>
         </div>
         <div class="row">
-          <div><label for="company">Company</label><input id="company" type="text" placeholder="Golden Art"></div>
-          <div><label for="phone">Phone</label><input id="phone" type="text" placeholder="+389 70 369 666"></div>
+          <div><label for="company">Company</label><input id="company" type="text" placeholder="Company"></div>
+          <div><label for="phone">Phone</label><input id="phone" type="text" placeholder="+389 70 000 000"></div>
         </div>
         <div class="row">
-          <div><label for="email">Email</label><input id="email" type="email" placeholder="ivica@goldenart.mk"></div>
-          <div><label for="website">Website</label><input id="website" type="url" placeholder="https://goldenart.mk"></div>
+          <div><label for="email">Email</label><input id="email" type="email" placeholder="name@company.com"></div>
+          <div><label for="website">Website</label><input id="website" type="url" placeholder="https://yourwebsite.com"></div>
         </div>
         <div>
           <label for="address">Work address</label>
-          <input id="address" type="text" placeholder="РУДИ ЧАЈАВЕЦ 7-2/д.п.3, СКОПЈЕ - АЕРОДРОМ, Северна Македонија">
+          <input id="address" type="text" placeholder="Street, City, Region, Postal, Country">
         </div>
 
         <div>
@@ -65,8 +141,9 @@
         <div id="msg"></div>
       </form>
     </div>
-  </main>
+  </div>
 
+  <!-- ORIGINAL, UNCHANGED FUNCTIONALITY BELOW -->
   <script>
     // --- helpers ---
     const $ = sel => document.querySelector(sel);
