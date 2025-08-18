@@ -1,208 +1,376 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin – Card Manager</title>
-  <style>
-    body{margin:0;background:#eef3f1;font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial}
-    header{padding:14px 16px;background:#111;color:#fff;display:flex;gap:12px;align-items:center}
-    header input{max-width:320px;padding:10px 12px;border-radius:10px;border:1px solid #333;background:#1b1b1b;color:#fff}
-    main{max-width:1000px;margin:20px auto;padding:0 16px}
-    .panel{background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.08);padding:16px}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
-    .btn{background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;cursor:pointer}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-    input,textarea{width:100%;padding:10px;border:1px solid #d9dee3;border-radius:10px;background:#f3f6f8}
-    .actions{display:flex;gap:8px;flex-wrap:wrap}
-    .muted{opacity:.7}
-    .danger{background:#b21d1d}
-    .ok{background:#1d6b2a}
-    .hidden{display:none}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Admin – Card Manager</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#eef3f1;font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial}
+  a{color:#000;text-decoration:none}
+  .container{max-width:1100px;margin:24px auto;padding:0 16px}
+
+  /* Login */
+  .card{background:#fff;border-radius:16px;box-shadow:0 16px 50px rgba(0,0,0,.1);padding:20px}
+  .login-wrap{max-width:420px;margin:16vh auto}
+  .title{font-size:24px;font-weight:700;margin:8px 0 14px}
+  label{font-size:13px;opacity:.8}
+  input[type=text],input[type=password],input[type=email],input[type=url]{width:100%;padding:12px 14px;border:1px solid #d9dee3;border-radius:12px;background:#f3f6f8}
+  .row{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+  @media(max-width:760px){.row{grid-template-columns:1fr}}
+  .btn{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 14px;cursor:pointer}
+  .btn.secondary{background:#2f2f2f}
+  .btn.danger{background:#b21d1d}
+  .btn.ghost{background:transparent;color:#111;border:1px solid #d9dee3}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .toolbar input{max-width:260px}
+
+  /* Dashboard layout */
+  .grid{display:grid;grid-template-columns:1fr;gap:16px}
+  .table{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.08)}
+  th,td{padding:12px 14px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
+  thead th{background:#f7f9fb;font-weight:600}
+  tbody tr:hover{background:#fafbfd}
+  .muted{opacity:.7}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef3f1;font-size:12px}
+
+  /* Modal */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+  .modal{background:#fff;border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.2);max-width:760px;width:100%;padding:16px}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .modal h3{margin:0}
+  .form{display:grid;gap:12px}
+  .form .row3{display:grid;gap:12px;grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:900px){.form .row3{grid-template-columns:1fr}}
+  textarea{width:100%;padding:12px 14px;border:1px solid #d9dee3;border-radius:12px;background:#f3f6f8;min-height:70px}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .right{margin-left:auto}
+  .preview{display:flex;gap:14px;align-items:center}
+  .avatar{width:90px;height:90px;border-radius:50%;background:#111;display:grid;place-items:center;overflow:hidden}
+  .avatar img{width:84px;height:84px;object-fit:cover;border-radius:50%;background:#fff}
+
+  /* Toast */
+  .toast{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;padding:10px 14px;border-radius:10px;opacity:0;transform:translateY(8px);transition:.2s;z-index:60}
+  .toast.show{opacity:1;transform:translateY(0)}
+</style>
 </head>
 <body>
-  <header>
-    <div style="font-weight:600">Admin – Cards</div>
-    <input id="adminKey" placeholder="Admin key" />
-    <button class="btn" id="saveKey">Use key</button>
-    <input id="q" placeholder="Search name/company/email/phone" style="margin-left:auto;" />
-    <button class="btn" id="search">Search</button>
-  </header>
 
-  <main>
-    <div class="panel">
-      <table id="tbl">
-        <thead><tr><th>Name</th><th>Company</th><th>Phone</th><th>Email</th><th>Links</th><th>Actions</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <div style="margin-top:10px" class="actions">
-        <button class="btn" id="prev">Prev</button>
-        <button class="btn" id="next">Next</button>
-        <span class="muted" id="status"></span>
+<!-- LOGIN -->
+<div id="loginView" class="login-wrap">
+  <div class="card">
+    <div class="title">Admin login</div>
+    <div class="form" id="loginForm">
+      <div>
+        <label>Admin key</label>
+        <input id="adminKey" type="password" placeholder="Enter admin key" autofocus />
+      </div>
+      <div class="actions">
+        <button class="btn" id="loginBtn">Sign in</button>
+        <label class="muted"><input id="remember" type="checkbox" checked /> Remember on this device</label>
+      </div>
+      <div id="loginMsg" class="muted"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="appView" class="container" style="display:none">
+  <div class="grid">
+    <div class="card">
+      <div class="toolbar">
+        <div class="title" style="margin:0">Cards</div>
+        <input id="q" type="text" placeholder="Search name/company/email/phone"/>
+        <button class="btn" id="searchBtn">Search</button>
+        <button class="btn ghost" id="clearBtn">Clear</button>
+        <div class="right"></div>
+        <button class="btn secondary" id="refreshBtn">Refresh</button>
+        <button class="btn" id="newBtn">Create new</button>
+        <button class="btn ghost" id="logoutBtn">Logout</button>
       </div>
     </div>
 
-    <div class="panel" style="margin-top:16px">
-      <h3>Edit</h3>
-      <form id="f" class="row">
-        <input type="hidden" id="slug" />
-        <div><label>Name</label><input id="name" required></div>
-        <div><label>Title</label><input id="title"></div>
-        <div><label>Company</label><input id="company"></div>
-        <div><label>Phone</label><input id="phone"></div>
-        <div><label>Email</label><input id="email" type="email"></div>
-        <div><label>Website</label><input id="website" placeholder="https://..."></div>
-        <div class="row3" style="grid-column:1/-1">
-          <div style="grid-column:1/-1"><label>Address</label><input id="address"></div>
-          <div><label>Logo (JPEG &lt;1MB)</label><input id="logo" type="file" accept="image/*"></div>
-          <div><img id="preview" class="hidden" style="width:90px;height:90px;border-radius:50%;object-fit:cover;background:#fff" /></div>
-        </div>
-        <div class="actions" style="grid-column:1/-1;margin-top:10px">
-          <button class="btn ok" id="save">Save changes</button>
-          <button class="btn danger" id="del" type="button">Delete</button>
-          <span class="muted" id="msg"></span>
-        </div>
-      </form>
+    <table class="table" id="tbl">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Company</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Links</th>
+          <th style="width:210px">Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="card" style="display:flex;gap:10px;align-items:center">
+      <button class="btn" id="prevBtn">Prev</button>
+      <button class="btn" id="nextBtn">Next</button>
+      <span id="status" class="muted"></span>
     </div>
-  </main>
+  </div>
+</div>
 
-  <script>
-    const $ = s => document.querySelector(s);
-    const API = {
-      list:  (q,offset=0,limit=20)=> fetch(\`/.netlify/functions/list_profiles?q=\${encodeURIComponent(q||'')}&offset=\${offset}&limit=\${limit}\`, { headers: authHeaders() }).then(r=>r.json()),
-      get:   (slug)=> fetch(\`/.netlify/functions/get_profile?slug=\${encodeURIComponent(slug)}\`).then(r=>r.json()),
-      save:  (slug,payload)=> fetch(\`/.netlify/functions/update_profile?slug=\${encodeURIComponent(slug)}\`, { method:'PUT', headers: { ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify(payload) }).then(r=>r.json()),
-      del:   (slug)=> fetch(\`/.netlify/functions/delete_profile?slug=\${encodeURIComponent(slug)}\`, { method:'DELETE', headers: authHeaders() }).then(r=>r.json()),
+<!-- MODAL: CREATE / EDIT -->
+<div id="modalBackdrop" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Edit profile</h3>
+      <button class="btn ghost" id="closeModal">Close</button>
+    </div>
+    <form id="f" class="form">
+      <input type="hidden" id="slug" />
+      <div class="row">
+        <div><label>Full name</label><input id="name" required></div>
+        <div><label>Job title</label><input id="title"></div>
+      </div>
+      <div class="row">
+        <div><label>Company</label><input id="company"></div>
+        <div><label>Phone</label><input id="phone" placeholder="+38970369666"></div>
+      </div>
+      <div class="row">
+        <div><label>Email</label><input id="email" type="email"></div>
+        <div><label>Website</label><input id="website" type="url" placeholder="https://..."></div>
+      </div>
+      <div><label>Address</label><input id="address"></div>
+
+      <div class="row">
+        <div>
+          <label>Logo (JPEG &lt; 1MB)</label>
+          <input id="logo" type="file" accept="image/*">
+          <div class="preview" style="margin-top:6px">
+            <div class="avatar"><img id="preview" alt=""></div>
+            <div class="muted" id="previewHint">No image</div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="saveBtn">Save</button>
+        <button class="btn danger" id="deleteBtn" type="button">Delete</button>
+        <div class="right muted" id="msg"></div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ------------ Utilities ------------ */
+const $ = s => document.querySelector(s);
+const API = {
+  list:  (q,offset=0,limit=20)=> fetch(`/.netlify/functions/list_profiles?q=${encodeURIComponent(q||'')}&offset=${offset}&limit=${limit}`, { headers: authHeaders() }).then(h),
+  get:   (slug)=> fetch(`/.netlify/functions/get_profile?slug=${encodeURIComponent(slug)}`).then(h),
+  create:(payload)=> fetch('/.netlify/functions/create_profile',{ method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify(payload)}).then(h),
+  update:(slug,payload)=> fetch(`/.netlify/functions/update_profile?slug=${encodeURIComponent(slug)}`, { method:'PUT', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify(payload)}).then(h),
+  del:   (slug)=> fetch(`/.netlify/functions/delete_profile?slug=${encodeURIComponent(slug)}`, { method:'DELETE', headers: authHeaders() }).then(h),
+};
+function h(r){ if(!r.ok) return r.text().then(t=>{throw new Error(t||r.status) }); return r.json(); }
+function authHeaders(){ const k=localStorage.getItem('ADMIN_KEY')||''; return { 'x-admin-key': k }; }
+function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1800); }
+function normalizePhone(v){ return (v||'').replace(/[^\d+]/g,''); }
+
+/* image compression -> base64 only */
+async function compressToBase64(file, maxSide=900, quality=0.85){
+  return new Promise((resolve, reject)=>{
+    const img=new Image(), fr=new FileReader();
+    fr.onload=()=>img.src=fr.result; fr.onerror=reject;
+    img.onload=()=>{
+      const s=Math.min(1,maxSide/Math.max(img.width,img.height));
+      const w=Math.round(img.width*s), h=Math.round(img.height*s);
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img,0,0,w,h);
+      const dataUrl=c.toDataURL('image/jpeg', quality);
+      const base64=dataUrl.split(',')[1];
+      resolve({ base64, approxBytes: Math.floor(base64.length*0.75), dataUrl });
     };
+    img.onerror=reject;
+    fr.readAsDataURL(file);
+  });
+}
 
-    function authHeaders(){
-      const k = localStorage.getItem('ADMIN_KEY') || '';
-      return { 'x-admin-key': k };
-    }
+/* ------------ State ------------ */
+let offset=0, limit=20, query='', mode='create'; // or 'edit'
+let currentSlug=null;
+let stagedBase64=null;
 
-    // Option B (no env var, weak): replace authHeaders() with:
-    // function authHeaders(){ return { 'x-admin-key': 'YOUR_WEAK_PIN' }; }
+/* ------------ Login flow ------------ */
+async function tryLogin(){
+  const key=$('#adminKey').value.trim();
+  if(!key){ $('#loginMsg').textContent='Enter your admin key'; return; }
+  localStorage.setItem('ADMIN_KEY', key);
+  // probe the API
+  try{
+    await API.list('',0,1);
+    $('#loginView').style.display='none';
+    $('#appView').style.display='block';
+    await load();
+  }catch(e){
+    localStorage.removeItem('ADMIN_KEY');
+    $('#loginMsg').textContent='Invalid key';
+  }
+}
 
-    async function compressToBase64(file, maxSide=900, quality=0.85){
-      return new Promise((res,rej)=>{
-        const img=new Image(), fr=new FileReader();
-        fr.onload=()=>img.src=fr.result; fr.onerror=rej;
-        img.onload=()=>{
-          const s=Math.min(1,maxSide/Math.max(img.width,img.height));
-          const c=document.createElement('canvas'); c.width=img.width*s; c.height=img.height*s;
-          const ctx=c.getContext('2d'); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
-          ctx.drawImage(img,0,0,c.width,c.height);
-          const dataUrl=c.toDataURL('image/jpeg',quality);
-          res(dataUrl.split(',')[1]); // base64 only
-        };
-        img.onerror=rej; fr.readAsDataURL(file);
-      });
-    }
+$('#loginBtn').addEventListener('click', tryLogin);
+$('#adminKey').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
 
-    let offset=0, limit=20, currentSlug=null;
+(function bootstrapLogin(){
+  const k=localStorage.getItem('ADMIN_KEY');
+  if(k){ $('#adminKey').value=k; tryLogin(); }
+})();
 
-    async function load(){
-      const q=$('#q').value.trim();
-      const rows=await API.list(q,offset,limit);
-      const tbody=$('#tbl tbody');
-      tbody.innerHTML='';
-      rows.forEach(r=>{
-        const tr=document.createElement('tr');
-        const cardUrl=\`/card/\${r.slug}\`;
-        const vcfUrl=\`/.netlify/functions/vcf?slug=\${r.slug}\`;
-        tr.innerHTML=\`
-          <td>\${r.name||''}</td>
-          <td>\${r.company||''}</td>
-          <td>\${r.phone||''}</td>
-          <td>\${r.email||''}</td>
-          <td><a href="\${cardUrl}" target="_blank">Card</a> · <a href="\${vcfUrl}" target="_blank">vCard</a></td>
-          <td class="actions"><button class="btn" data-slug="\${r.slug}">Edit</button></td>\`;
-        tr.querySelector('button').addEventListener('click',()=>edit(r.slug));
-        tbody.appendChild(tr);
-      });
-      $('#status').textContent=\`Showing \${rows.length} items (offset \${offset})\`;
-    }
+/* ------------ Dashboard ------------ */
+async function load(){
+  const rows = await API.list(query, offset, limit);
+  const tbody = $('#tbl tbody');
+  tbody.innerHTML='';
 
-    async function edit(slug){
-      const p=await API.get(slug);
-      currentSlug=slug;
-      $('#slug').value=slug;
-      $('#name').value=p.name||'';
-      $('#title').value=p.title||'';
-      $('#company').value=p.company||'';
-      $('#phone').value=p.phone||'';
-      $('#email').value=p.email||'';
-      $('#website').value=p.website||'';
-      $('#address').value=p.address||'';
-      if (p.logo_base64){
-        $('#preview').src='data:image/jpeg;base64,'+p.logo_base64;
-        $('#preview').classList.remove('hidden');
-      } else {
-        $('#preview').classList.add('hidden');
-      }
-      $('#msg').textContent='';
-    }
-
-    // Events
-    $('#saveKey').addEventListener('click', ()=>{
-      const k=$('#adminKey').value.trim();
-      if(!k){ alert('Enter admin key'); return; }
-      localStorage.setItem('ADMIN_KEY', k);
-      load();
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    const cardUrl=`/card/${r.slug}`;
+    const vcfUrl=`/.netlify/functions/vcf?slug=${r.slug}`;
+    tr.innerHTML = `
+      <td>${r.name||''}</td>
+      <td>${r.company||''}</td>
+      <td>${r.phone||''}</td>
+      <td>${r.email||''}</td>
+      <td>
+        <a href="${cardUrl}" target="_blank">Card</a> ·
+        <a href="${vcfUrl}" target="_blank">vCard</a>
+      </td>
+      <td>
+        <button class="btn" data-act="edit">Edit</button>
+        <button class="btn ghost" data-act="copy" data-url="${cardUrl}">Copy Card</button>
+        <button class="btn danger" data-act="delete">Delete</button>
+      </td>
+    `;
+    tr.querySelector('[data-act="edit"]').addEventListener('click', ()=> openEdit(r.slug));
+    tr.querySelector('[data-act="delete"]').addEventListener('click', ()=> onDelete(r.slug));
+    tr.querySelector('[data-act="copy"]').addEventListener('click', async (ev)=>{
+      await navigator.clipboard.writeText(location.origin + ev.currentTarget.dataset.url);
+      toast('Link copied');
     });
+    tbody.appendChild(tr);
+  });
 
-    $('#search').addEventListener('click', ()=>{ offset=0; load(); });
-    $('#prev').addEventListener('click', ()=>{ offset=Math.max(0,offset-limit); load(); });
-    $('#next').addEventListener('click', ()=>{ offset+=limit; load(); });
+  $('#status').textContent = `Showing ${rows.length} items (offset ${offset})`;
+}
 
-    $('#logo').addEventListener('change', async (e)=>{
-      const f=e.target.files?.[0];
-      if(!f) return;
-      const b64=await compressToBase64(f, 900, 0.85);
-      $('#preview').src='data:image/jpeg;base64,'+b64;
-      $('#preview').classList.remove('hidden');
-      $('#preview').dataset.b64=b64; // stash for saving
-    });
+/* Search & paginate */
+$('#searchBtn').addEventListener('click', ()=>{ query=$('#q').value.trim(); offset=0; load(); });
+$('#clearBtn').addEventListener('click', ()=>{ $('#q').value=''; query=''; offset=0; load(); });
+$('#refreshBtn').addEventListener('click', load);
+$('#prevBtn').addEventListener('click', ()=>{ offset=Math.max(0,offset-limit); load(); });
+$('#nextBtn').addEventListener('click', ()=>{ offset+=limit; load(); });
+$('#logoutBtn').addEventListener('click', ()=>{ localStorage.removeItem('ADMIN_KEY'); location.reload(); });
 
-    $('#f').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      if(!currentSlug){ alert('Pick a row to edit'); return; }
-      const patch={
-        name: $('#name').value.trim(),
-        title: $('#title').value.trim(),
-        company: $('#company').value.trim(),
-        phone: $('#phone').value.trim(),
-        email: $('#email').value.trim(),
-        website: $('#website').value.trim(),
-        address: $('#address').value.trim()
-      };
-      if ($('#preview').dataset.b64){
-        const approxBytes = Math.floor($('#preview').dataset.b64.length * 0.75);
-        if (approxBytes > 1_000_000) { alert('Logo >1MB after compression; choose a smaller image'); return; }
-        patch.logo_base64 = $('#preview').dataset.b64;
-      }
-      const out = await API.save(currentSlug, patch);
-      if (out.error){ $('#msg').textContent = 'Error: ' + out.error; }
-      else { $('#msg').textContent = 'Saved.'; load(); }
-    });
+/* ------------ Modal (create/edit) ------------ */
+$('#newBtn').addEventListener('click', ()=> openCreate());
+$('#closeModal').addEventListener('click', closeModal);
+$('#logo').addEventListener('change', onLogoChange);
+$('#f').addEventListener('submit', onSave);
 
-    $('#del').addEventListener('click', async ()=>{
-      if(!currentSlug) return;
-      if(!confirm('Delete this profile?')) return;
-      const out = await API.del(currentSlug);
-      if (out.error){ $('#msg').textContent='Error: '+out.error; }
-      else { $('#msg').textContent='Deleted.'; currentSlug=null; $('#f').reset(); $('#preview').classList.add('hidden'); load(); }
-    });
+function openCreate(){
+  mode='create';
+  currentSlug=null;
+  stagedBase64=null;
+  $('#modalTitle').textContent='Create profile';
+  $('#slug').value='';
+  $('#name').value=''; $('#title').value=''; $('#company').value='';
+  $('#phone').value=''; $('#email').value=''; $('#website').value='';
+  $('#address').value=''; $('#logo').value='';
+  $('#preview').src=''; $('#previewHint').textContent='No image';
+  $('#deleteBtn').style.display='none';
+  $('#msg').textContent='';
+  showModal();
+}
 
-    // bootstrap
-    (function init(){
-      const k=localStorage.getItem('ADMIN_KEY')||'';
-      if(k) $('#adminKey').value=k;
-      load();
-    })();
-  </script>
+async function openEdit(slug){
+  mode='edit';
+  currentSlug=slug; stagedBase64=null;
+  $('#modalTitle').textContent='Edit profile';
+  $('#deleteBtn').style.display='inline-block'; $('#msg').textContent='';
+  const p = await API.get(slug);
+  $('#slug').value = slug;
+  $('#name').value = p.name||'';
+  $('#title').value = p.title||'';
+  $('#company').value = p.company||'';
+  $('#phone').value = p.phone||'';
+  $('#email').value = p.email||'';
+  $('#website').value = p.website||'';
+  $('#address').value = p.address||'';
+  if (p.logo_base64){
+    $('#preview').src = 'data:image/jpeg;base64,' + p.logo_base64;
+    $('#previewHint').textContent = 'Existing image';
+  } else {
+    $('#preview').src = ''; $('#previewHint').textContent='No image';
+  }
+  showModal();
+}
+
+function showModal(){ $('#modalBackdrop').style.display='flex'; }
+function closeModal(){ $('#modalBackdrop').style.display='none'; }
+
+/* logo change */
+async function onLogoChange(e){
+  const f=e.target.files?.[0]; if(!f){ stagedBase64=null; return; }
+  const beforeKB = Math.round(f.size/1024);
+  const { base64, approxBytes, dataUrl } = await compressToBase64(f, 900, 0.85);
+  stagedBase64 = base64;
+  $('#preview').src = dataUrl;
+  $('#previewHint').textContent = `Compressed ${beforeKB} KB → ~${Math.round(approxBytes/1024)} KB`;
+  if (approxBytes > 1_000_000){ alert('Logo still too big after compression. Choose a smaller image.'); stagedBase64=null; $('#logo').value=''; }
+}
+
+/* Save (create or edit) */
+async function onSave(e){
+  e.preventDefault();
+  const msg=$('#msg'); msg.textContent='';
+  const payload = {
+    name: $('#name').value.trim(),
+    title: $('#title').value.trim(),
+    company: $('#company').value.trim(),
+    phone: normalizePhone($('#phone').value.trim()),
+    email: $('#email').value.trim(),
+    website: $('#website').value.trim(),
+    address: $('#address').value.trim()
+  };
+  if (stagedBase64) payload.logo_base64 = stagedBase64;
+
+  try{
+    if (mode==='create'){
+      if (!payload.name || (!payload.phone && !payload.email)) { msg.textContent='Name and (phone or email) are required'; return; }
+      const out = await API.create(payload);
+      if (!out.ok) throw new Error(out.error||'Create failed');
+      toast('Created'); closeModal(); load();
+    } else {
+      const slug = $('#slug').value;
+      const out = await API.update(slug, payload);
+      if (out.error) throw new Error(out.error);
+      toast('Saved'); closeModal(); load();
+    }
+  }catch(err){
+    msg.textContent = String(err?.message || err);
+  }
+}
+
+/* Delete */
+async function onDelete(slug){
+  if(!confirm('Delete this profile?')) return;
+  try{
+    const out = await API.del(slug);
+    if (out.error) throw new Error(out.error);
+    toast('Deleted');
+    closeModal(); load();
+  }catch(err){
+    toast('Error: ' + String(err?.message || err));
+  }
+}
+</script>
 </body>
 </html>
