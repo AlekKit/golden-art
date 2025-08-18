@@ -46,9 +46,19 @@
   }
 
   .wrap{max-width:980px;margin:36px auto;padding:0 20px}
-  header{display:flex;align-items:center;gap:14px;margin:8px 0 18px}
+  header{display:flex;align-items:center;justify-content:space-between;margin:8px 0 18px}
+  .logoWrap{display:flex;align-items:center;gap:12px}
   .logoDot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px var(--accent)}
   h1{margin:0;font-size:32px;letter-spacing:.2px}
+  .backLink{
+    font-size:14px; font-weight:500; text-decoration:none;
+    background:var(--panel); border:1px solid var(--secondaryBorder);
+    padding:8px 14px; border-radius:10px;
+    color:var(--text);
+    box-shadow:var(--shadow-sm);
+    transition:background .15s ease, transform .06s ease;
+  }
+  .backLink:hover{background:var(--input-bg); transform:translateY(-1px)}
 
   .card{
     background:var(--panel);
@@ -66,9 +76,7 @@
 
   label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
 
-  .field{
-    position:relative;
-  }
+  .field{position:relative}
   .field input[type=text],
   .field input[type=email],
   .field input[type=url],
@@ -115,10 +123,6 @@
     box-shadow:var(--shadow-sm); transition:transform .06s ease, opacity .15s ease;
   }
   .btn:hover{transform:translateY(-1px);opacity:.96}
-  .btn.secondary{
-    background:transparent; color:var(--text);
-    border:1px solid var(--secondaryBorder);
-  }
   .note{font-size:13px;color:var(--muted)}
 
   /* Result box */
@@ -128,26 +132,21 @@
     border-radius:14px; padding:12px 14px;
   }
 
-  /* Hide any vCard link your current JS might output */
+  /* Hide vCard link */
   #result a[href*="/.netlify/functions/vcf"]{display:none!important}
-
-  /* back button wrapper */
-  .topNav{margin-bottom:18px}
 </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <span class="logoDot"></span>
-      <h1>Create your card</h1>
+      <div class="logoWrap">
+        <span class="logoDot"></span>
+        <h1>Create your card</h1>
+      </div>
+      <a class="backLink" href="/">← Back to homepage</a>
     </header>
 
     <div class="card">
-      <div class="topNav">
-        <a class="btn secondary" href="/">← Back to homepage</a>
-      </div>
-
-      <!-- IDs preserved exactly so your JS keeps working -->
       <form id="createForm" onsubmit="return false;">
         <div class="grid-2">
           <div>
@@ -203,7 +202,7 @@
         <div>
           <label for="address">Address</label>
           <div class="field">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 0 0 1 12 11.5Z"/></svg>
             <input id="address" type="text" placeholder="Street, City, Country"/>
           </div>
         </div>
@@ -230,7 +229,6 @@
     </div>
   </div>
 
-  <!-- Small preview helper; no change to your create logic -->
   <script>
     const fileInput = document.getElementById('logo');
     const previewImg = document.getElementById('preview');
