@@ -1,88 +1,108 @@
-import { neon } from "@netlify/neon";
+// netlify/functions/update_profile.mjs
+import { neon } from '@netlify/neon';
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "PUT,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
-
-const json = (code, data) => ({
-  statusCode: code,
-  headers: { ...CORS, "Content-Type": "application/json" },
-  body: JSON.stringify(data),
+// Simple helpers
+const json = (status, body) => new Response(JSON.stringify(body), {
+  status,
+  headers: {
+    'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'no-store',
+    'access-control-allow-origin': '*',
+  }
 });
 
-export async function handler(event) {
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: CORS };
-  }
-  if (!["PUT", "POST"].includes(event.httpMethod)) {
-    return json(405, { error: "Use PUT or POST" });
-  }
+const requireAdmin = (req) => {
+  const key = req.headers.get('x-admin-key') || '';
+  const expected = process.env.ADMIN_KEY || '';
+  return key && expected && key === expected;
+};
 
+// Normalize a phone to digits/+ only
+const normalizePhone = (v = '') => v.replace(/[^\d+]/g, '');
+
+export default async (req) => {
   try {
-    const slug =
-      event.queryStringParameters?.slug || event.path.split("/").pop();
-    if (!slug) return json(400, { error: "Missing slug" });
-
-    const patch = JSON.parse(event.body || "{}");
-
-    // Normalize logo_base64 if provided
-    if (typeof patch.logo_base64 === "string" && patch.logo_base64) {
-      let b64 = patch.logo_base64;
-      if (b64.startsWith("data:image")) {
-        const parts = b64.split(",");
-        if (parts[1]) b64 = parts[1];
-      }
-      b64 = b64.replace(/\s+/g, "");
-      const approxBytes = Math.floor(b64.length * 0.75);
-      if (approxBytes > 1_000_000) {
-        return json(413, { error: "Logo too large (>1MB) after compression" });
-      }
-      patch.logo_base64 = b64;
+    if (req.method !== 'PUT') {
+      return json(405, { error: 'Method not allowed' });
     }
 
-    const sql = neon();
-
-    await sql`CREATE TABLE IF NOT EXISTS profiles (
-      slug TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      title TEXT,
-      company TEXT,
-      phone TEXT,
-      email TEXT,
-      website TEXT,
-      address TEXT,
-      logo_base64 TEXT
-    )`;
-
-    const exists = await sql`SELECT slug FROM profiles WHERE slug = ${slug} LIMIT 1`;
-    if (!exists || exists.length === 0) {
-      return json(404, { error: "Profile not found" });
+    if (!requireAdmin(req)) {
+      return json(401, { error: 'Unauthorized' });
     }
 
-    // Whitelist fields and update only provided ones
-    const fields = [
-      "name",
-      "title",
-      "company",
-      "phone",
-      "email",
-      "website",
-      "address",
-      "logo_base64",
-    ];
-    for (const key of fields) {
-      if (patch[key] !== undefined) {
-        await sql`UPDATE profiles SET ${sql(key)} = ${patch[key]} WHERE slug = ${slug}`;
+    // slug comes from query string
+    const url = new URL(req.url);
+    const slug = url.searchParams.get('slug');
+    if (!slug) return json(400, { error: 'Missing slug' });
+
+    const body = await req.json().catch(() => ({}));
+
+    // Only allow these columns to be updated
+    const allowed = new Set([
+      'name', 'title', 'company', 'phone', 'email', 'website', 'address', 'logo_base64'
+    ]);
+
+    // Clean + transform inputs
+    const clean = {};
+    for (const [k, v] of Object.entries(body || {})) {
+      if (!allowed.has(k)) continue;
+
+      // Ignore undefined
+      if (v === undefined) continue;
+
+      // Trim strings
+      let val = typeof v === 'string' ? v.trim() : v;
+
+      // Special rules
+      if (k === 'phone' && val) val = normalizePhone(val);
+      if (k === 'logo_base64') {
+        // allow null to clear, string to set, ignore empty string
+        if (val === '') continue;
+        if (val === null) {
+          clean[k] = null;
+        } else {
+          clean[k] = String(val);
+        }
+        continue;
       }
+
+      // Allow explicit null to clear, or non-empty string to set
+      if (val === null) clean[k] = null;
+      else if (val !== '') clean[k] = val;
     }
 
-    const rows = await sql`
-      SELECT slug, name, title, company, phone, email, website, address, logo_base64
-      FROM profiles WHERE slug=${slug} LIMIT 1
+    // If nothing to update, exit gracefully (prevents "… near $1")
+    const fields = Object.keys(clean);
+    if (fields.length === 0) {
+      return json(400, { error: 'No fields to update' });
+    }
+
+    const sql = neon(); // Netlify DB (Neon) — auto-configured by env
+
+    // Build a safe parameterized SET list: col=$1, col2=$2, …
+    const setParts = [];
+    const values = [];
+    fields.forEach((col, i) => {
+      setParts.push(`${col} = $${i + 1}`);
+      values.push(clean[col]);
+    });
+
+    // slug is the last parameter
+    const paramIndex = fields.length + 1;
+    const text = `
+      UPDATE profiles
+      SET ${setParts.join(', ')}, updated_at = NOW()
+      WHERE slug = $${paramIndex}
+      RETURNING slug
     `;
-    return json(200, rows[0]);
+
+    const result = await sql(text, [...values, slug]);
+
+    if (!result.length) {
+      return json(404, { error: 'Profile not found' });
+    }
+
+    return json(200, { ok: true, slug: result[0].slug });
   } catch (err) {
     return json(500, { error: String(err?.message || err) });
   }
