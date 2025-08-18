@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Create your card</title>
 <style>
-  /* ===== Theme tokens ===== */
   :root{
     --bg1:#e8f0ec; --bg2:#f6faf8;
     --panel:#ffffff; --panel-border:rgba(15,23,32,.08);
@@ -17,6 +16,7 @@
     --shadow:0 30px 80px rgba(0,0,0,.14);
     --shadow-sm:0 10px 30px rgba(0,0,0,.08);
     --accent:#0ea5e9;
+    --ok:#10b981; --err:#ef4444;
   }
   @media (prefers-color-scheme: dark){
     :root{
@@ -35,8 +35,7 @@
 
   *{box-sizing:border-box}
   body{
-    margin:0;
-    min-height:100dvh;
+    margin:0; min-height:100dvh;
     font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial;
     color:var(--text);
     background:
@@ -69,20 +68,19 @@
     backdrop-filter:saturate(120%) blur(2px);
   }
 
-  /* form grid */
   form{display:grid;gap:18px}
   .grid-2{display:grid;gap:18px;grid-template-columns:1fr 1fr}
   @media (max-width:820px){.grid-2{grid-template-columns:1fr}}
 
   label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
-
   .field{position:relative}
+
   .field input[type=text],
   .field input[type=email],
   .field input[type=url],
   .field input[type=tel]{
     width:100%;
-    padding:14px 16px 14px 46px; /* room for icon */
+    padding:14px 16px 14px 46px;
     border:1px solid var(--input-br);
     background:var(--input-bg);
     border-radius:14px;
@@ -94,12 +92,7 @@
     border-color:var(--ring);
     box-shadow:0 0 0 3px color-mix(in srgb, var(--ring) 22%, transparent);
   }
-  .field svg{
-    position:absolute;left:14px;top:50%;transform:translateY(-50%);
-    width:18px;height:18px;opacity:.55
-  }
 
-  /* file input */
   .fileRow{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
   .fileRow input[type=file]{display:none}
   .btn-file{
@@ -114,7 +107,6 @@
   .preview{width:64px;height:64px;border-radius:50%;overflow:hidden;background:#111;display:grid;place-items:center;box-shadow:var(--shadow-sm)}
   .preview img{width:100%;height:100%;object-fit:cover}
 
-  /* actions */
   .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px}
   .btn{
     background:var(--btn); color:var(--btnText);
@@ -124,8 +116,9 @@
   }
   .btn:hover{transform:translateY(-1px);opacity:.96}
   .note{font-size:13px;color:var(--muted)}
+  .msg{font-size:13px;margin-top:6px}
+  .err{color:var(--err)} .ok{color:var(--ok)}
 
-  /* Result box */
   #result{
     margin-top:12px; font-size:14px; word-break:break-word;
     background:var(--input-bg); border:1px dashed var(--input-br);
@@ -149,7 +142,7 @@
           <div>
             <label for="name">Full name</label>
             <div class="field">
-              <input id="name" type="text" placeholder="Enter full name"/>
+              <input id="name" type="text" placeholder="Enter full name" required/>
             </div>
           </div>
           <div>
@@ -198,19 +191,20 @@
         </div>
 
         <div>
-          <label>Logo / photo</label>
+          <label>Logo / photo <span style="color:var(--muted)">(required)</span></label>
           <div class="fileRow">
             <label class="btn-file">
               <input id="logo" type="file" accept="image/*"/>
               Choose file
             </label>
-            <div class="preview"><img id="preview" alt=""></div>
-            <div class="hint">JPEG/PNG; large images are compressed automatically.</div>
+            <div class="preview" aria-hidden="true"><img id="preview" alt=""></div>
+            <div class="hint">We’ll optimize and save it as JPEG.</div>
           </div>
+          <div id="imgMsg" class="msg"></div>
         </div>
 
         <div class="actions">
-          <button id="generateBtn" class="btn">Generate</button>
+          <button id="generateBtn" class="btn" type="button">Generate</button>
           <span class="note">After generating, you’ll get the card URL below.</span>
         </div>
 
@@ -220,52 +214,140 @@
   </div>
 
   <script>
-    let imageBase64 = null;
-    let imageMime = null;
+    const el = id => document.getElementById(id);
+    const fileInput = el('logo');
+    const previewImg = el('preview');
+    const imgMsg = el('imgMsg');
+    const resultBox = el('result');
+    const btn = el('generateBtn');
 
-    const fileInput = document.getElementById('logo');
-    const previewImg = document.getElementById('preview');
-    fileInput?.addEventListener('change', () => {
+    let image_base64 = null; // raw base64 (no prefix)
+    let image_mime = 'image/jpeg'; // we normalize to JPEG
+
+    // Read, normalize to JPEG, compress, and set preview + base64
+    async function readAndNormalizeToJpeg(file){
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Failed to read image'));
+        reader.onload = () => {
+          const dataUrl = reader.result; // full data URL
+          const img = new Image();
+          img.onerror = () => reject(new Error('Invalid image'));
+          img.onload = () => {
+            // draw to canvas and export as JPEG
+            const canvas = document.createElement('canvas');
+            const maxSide = 1200;
+            const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            let q = 0.88;
+            let jpegUrl = canvas.toDataURL('image/jpeg', q);
+            const target = 500 * 1024; // ~500KB max
+            while (jpegUrl.length > target && q > 0.6) {
+              q -= 0.06;
+              jpegUrl = canvas.toDataURL('image/jpeg', q);
+            }
+
+            // preview (full data URL)
+            previewImg.src = jpegUrl;
+
+            // strip prefix -> raw base64 only
+            const b64 = jpegUrl.split(',')[1] || null;
+            resolve({ base64: b64, mime: 'image/jpeg', preview: jpegUrl });
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    fileInput?.addEventListener('change', async () => {
+      imgMsg.textContent = '';
+      image_base64 = null;
+
       const f = fileInput.files?.[0];
-      if (!f) { previewImg.removeAttribute('src'); imageBase64 = null; return; }
-      const r = new FileReader();
-      r.onload = e => {
-        previewImg.src = e.target.result;
-        const base64String = e.target.result.split(',')[1]; // only data
-        imageBase64 = base64String;
-        imageMime = f.type;
-      };
-      r.readAsDataURL(f);
+      if (!f) {
+        previewImg.removeAttribute('src');
+        return;
+      }
+      try {
+        const { base64, mime, preview } = await readAndNormalizeToJpeg(f);
+        if (!base64) throw new Error('Could not encode image');
+        image_base64 = base64;
+        image_mime = mime;
+        previewImg.src = preview;
+
+        // basic feedback
+        const approxKB = Math.round((base64.length * 3 / 4) / 1024);
+        imgMsg.innerHTML = `<span class="ok">Image ready (~${approxKB} KB, JPEG)</span>`;
+        console.log('[create] image_mime:', image_mime, 'base64_length:', base64.length);
+      } catch(err){
+        imgMsg.innerHTML = `<span class="err">${err.message}</span>`;
+      }
     });
 
-    document.getElementById('generateBtn').addEventListener('click', async () => {
+    function slugify(name){
+      return (name || 'card')
+        .toLowerCase().trim()
+        .replace(/[^a-z0-9]+/g,'-')
+        .replace(/^-+|-+$/g,'')
+        .slice(0,50) + '-' + Math.random().toString(36).slice(2,6);
+    }
+
+    function setBusy(b){ btn.disabled=b; btn.textContent=b?'Generating…':'Generate'; }
+    function showError(msg){ resultBox.innerHTML = `<div class="msg err">❌ ${msg}</div>`; }
+    function showSuccess(url){ resultBox.innerHTML = `<div class="msg ok">✅ Your card is ready!<br><a href="${url}">${url}</a></div>`; }
+
+    btn.addEventListener('click', async () => {
+      resultBox.textContent = '';
+
+      const name = el('name').value.trim();
+      const title = el('title').value.trim();
+      const company = el('company').value.trim();
+      const phone = el('phone').value.trim();
+      const email = el('email').value.trim();
+      const website = el('website').value.trim();
+      const address = el('address').value.trim();
+
+      if (!name) { showError('Please enter a name.'); return; }
+      if (!phone && !email) { showError('Enter at least a phone or an email.'); return; }
+      if (!image_base64) { showError('Please select an image before generating.'); return; }
+
       const payload = {
-        name: document.getElementById('name').value,
-        title: document.getElementById('title').value,
-        company: document.getElementById('company').value,
-        phone: document.getElementById('phone').value,
-        email: document.getElementById('email').value,
-        website: document.getElementById('website').value,
-        address: document.getElementById('address').value,
-        image_base64: imageBase64,
-        image_mime: imageMime
+        name, title, company, phone, email, website, address,
+        slug: slugify(name),
+        image_base64,            // raw base64 string (no data: prefix)
+        image_mime               // always "image/jpeg" here
       };
 
-      const res = await fetch('/.netlify/functions/create_profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      console.log('[create] sending payload sizes:', {
+        base64_len: image_base64?.length || 0,
+        name_len: name.length
       });
 
-      const data = await res.json();
-      const resultBox = document.getElementById('result');
-      if (data.slug) {
-        resultBox.innerHTML = `
-          Your card is ready!<br>
-          <a href="/card/${data.slug}" target="_blank">https://max-mcard.netlify.app/card/${data.slug}</a>
-        `;
-      } else {
-        resultBox.textContent = "Error: " + JSON.stringify(data);
+      setBusy(true);
+      try {
+        const res = await fetch('/.netlify/functions/create_profile', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const t = await res.text().catch(()=> '');
+          throw new Error(`Server error (${res.status}): ${t || 'failed to create profile'}`);
+        }
+
+        const data = await res.json();
+        const slug = data.slug || payload.slug;
+        showSuccess(`${location.origin}/card/${slug}`);
+      } catch (e) {
+        showError(e.message || 'Failed to create profile.');
+      } finally {
+        setBusy(false);
       }
     });
   </script>
