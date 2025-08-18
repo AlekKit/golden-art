@@ -5,39 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Admin – Card Manager</title>
 <style>
-  :root{color-scheme:light dark}
+  /* ---------- Force light theme (no auto-invert in dark mode) ---------- */
   *{box-sizing:border-box}
-  body{margin:0;background:#eef3f1;font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial}
-  a{color:#000;text-decoration:none}
+  body{
+    margin:0;
+    background:#eef3f1;     /* light background */
+    color:#111;             /* dark text */
+    font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial;
+  }
+  a{color:#111;text-decoration:none}
   .container{max-width:1100px;margin:24px auto;padding:0 16px}
 
-  /* Login */
-  .card{background:#fff;border-radius:16px;box-shadow:0 16px 50px rgba(0,0,0,.1);padding:20px}
-  .login-wrap{max-width:420px;margin:16vh auto}
-  .title{font-size:24px;font-weight:700;margin:8px 0 14px}
-  label{font-size:13px;opacity:.8}
-  input[type=text],input[type=password],input[type=email],input[type=url]{width:100%;padding:12px 14px;border:1px solid #d9dee3;border-radius:12px;background:#f3f6f8}
-  .row{display:grid;gap:12px;grid-template-columns:1fr 1fr}
-  @media(max-width:760px){.row{grid-template-columns:1fr}}
+  /* Shared cards/inputs always white with dark text */
+  .card, .table, input, textarea { background:#fff; color:#111; }
+  .muted{ color:#555; }
+
+  /* Buttons */
   .btn{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 14px;cursor:pointer}
   .btn.secondary{background:#2f2f2f}
   .btn.danger{background:#b21d1d}
   .btn.ghost{background:transparent;color:#111;border:1px solid #d9dee3}
+
+  /* Login */
+  .login-wrap{max-width:420px;margin:16vh auto}
+  .card{border-radius:16px;box-shadow:0 16px 50px rgba(0,0,0,.1);padding:20px}
+  .title{font-size:24px;font-weight:700;margin:8px 0 14px}
+  label{font-size:13px;opacity:.8}
+  input[type=text],input[type=password],input[type=email],input[type=url]{
+    width:100%;padding:12px 14px;border:1px solid #d9dee3;border-radius:12px;background:#f3f6f8
+  }
+  .row{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+  @media(max-width:760px){.row{grid-template-columns:1fr}}
   .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .toolbar input{max-width:260px}
 
   /* Dashboard layout */
   .grid{display:grid;grid-template-columns:1fr;gap:16px}
-  .table{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.08)}
+  .table{width:100%;border-collapse:collapse;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.08)}
   th,td{padding:12px 14px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
   thead th{background:#f7f9fb;font-weight:600}
   tbody tr:hover{background:#fafbfd}
-  .muted{opacity:.7}
   .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef3f1;font-size:12px}
 
   /* Modal */
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
-  .modal{background:#fff;border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.2);max-width:760px;width:100%;padding:16px}
+  .modal{background:#fff;color:#111;border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.2);max-width:760px;width:100%;padding:16px}
   .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
   .modal h3{margin:0}
   .form{display:grid;gap:12px}
@@ -215,10 +227,8 @@ async function tryLogin(){
     $('#loginMsg').textContent='Invalid key';
   }
 }
-
 $('#loginBtn').addEventListener('click', tryLogin);
 $('#adminKey').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
-
 (function bootstrapLogin(){
   const k=localStorage.getItem('ADMIN_KEY');
   if(k){ $('#adminKey').value=k; tryLogin(); }
