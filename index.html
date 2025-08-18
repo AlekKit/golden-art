@@ -1,5 +1,285 @@
-<!DOCTYPE html><html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Smart Contact Card</title>
-<style>body{margin:0;font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial;background:#eef3f1}header{padding:28px 16px;text-align:center;background:#111;color:#fff}main{max-width:840px;margin:24px auto;padding:0 16px}.cta{display:inline-block;background:#111;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none}.hero{background:#fff;border-radius:16px;padding:24px;box-shadow:0 12px 40px rgba(0,0,0,.08)}</style>
-</head><body><header><h1>Smart Contact Card</h1><p>Create a beautiful, iOS‑ready vCard page in seconds.</p></header><main><div class="hero"><h2>Make your card</h2><p>Fill the form and get a shareable link with a working <em>Save contact</em> button.</p><a class="cta" href="/create.html">Create your card</a></div></main></body></html>
+<meta name="description" content="Create a beautiful, iOS-ready vCard page in seconds. Share one link that lets people save your contact instantly.">
+<style>
+  /* ===== Theme tokens ===== */
+  :root{
+    --bg1:#e8f0ec; --bg2:#f6faf8;
+    --panel:#ffffff; --panel-br:rgba(15,23,32,.08);
+    --text:#0f1720; --muted:#66737e;
+    --ring:#1f2937; --accent:#0ea5e9; --accent-ink:#051923;
+    --btn:#111111; --btnText:#ffffff;
+    --shadow-lg:0 30px 80px rgba(0,0,0,.14);
+    --shadow:0 14px 40px rgba(0,0,0,.10);
+    --shadow-sm:0 8px 24px rgba(0,0,0,.08);
+    --card-bg:#ffffff;
+    --card-br:rgba(15,23,32,.08);
+    --link:#0f1720;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg1:#0b1014; --bg2:#0f171c;
+      --panel:#0f151a; --panel-br:rgba(255,255,255,.06);
+      --text:#eef3f1; --muted:#a7b2bb;
+      --ring:#7dd3fc; --accent:#38bdf8; --accent-ink:#03131b;
+      --btn:#e9e9e9; --btnText:#0b0b0b;
+      --shadow-lg:0 30px 80px rgba(0,0,0,.55);
+      --shadow:0 14px 40px rgba(0,0,0,.45);
+      --shadow-sm:0 8px 24px rgba(0,0,0,.35);
+      --card-bg:#12181d;
+      --card-br:rgba(255,255,255,.06);
+      --link:#e7ecea;
+    }
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    color:var(--text);
+    font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial;
+    background:
+      radial-gradient(1100px 600px at 10% -10%, var(--bg2), transparent 60%),
+      radial-gradient(1100px 600px at 110% 0%, var(--bg2), transparent 60%),
+      linear-gradient(180deg, var(--bg1), var(--bg2));
+    min-height:100dvh;
+  }
+
+  a{color:var(--link); text-decoration:none}
+  .container{max-width:1100px;margin:0 auto;padding:0 22px}
+
+  /* Nav */
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+  .brand{display:flex;align-items:center;gap:10px}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px var(--accent)}
+  .brand h1{font-size:18px;margin:0}
+  .nav a.btn{padding:10px 14px;border-radius:12px}
+  .btn{
+    background:var(--btn);
+    color:var(--btnText);
+    border:0;display:inline-flex;align-items:center;gap:8px;
+    padding:12px 18px;border-radius:14px;font-weight:600;box-shadow:var(--shadow-sm);
+    transition:transform .06s ease,opacity .15s ease;
+  }
+  .btn:hover{transform:translateY(-1px);opacity:.96}
+  .btn.ghost{
+    background:transparent;color:var(--text);border:1px solid var(--panel-br);
+  }
+
+  /* Hero */
+  .hero{padding:40px 0 28px}
+  .heroCard{
+    background:var(--panel);
+    border:1px solid var(--panel-br);
+    border-radius:22px;
+    padding:36px 28px;
+    box-shadow:var(--shadow-lg);
+  }
+  .heroGrid{
+    display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center;
+  }
+  @media (max-width: 900px){.heroGrid{grid-template-columns:1fr}}
+  .title{font-size:36px;line-height:1.1;margin:0 0 12px}
+  .subtitle{color:var(--muted);margin:0 0 22px}
+  .ctaRow{display:flex;gap:12px;flex-wrap:wrap}
+
+  /* Mock card (illustration only) */
+  .mock{
+    background:var(--card-bg);
+    border:1px solid var(--card-br);
+    border-radius:20px;
+    padding:18px;
+    box-shadow:var(--shadow);
+  }
+  .bar{height:96px;background:#111;border-radius:14px 14px 8px 8px;display:grid;place-items:center}
+  @media (prefers-color-scheme: dark){.bar{background:#0e0e0e}}
+  .badge{width:74px;height:74px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:700}
+  .cardBody{padding:16px}
+  .line{height:12px;background:color-mix(in srgb, var(--muted) 25%, transparent);border-radius:999px;margin:10px 0}
+  .row{display:flex;align-items:center;gap:12px;margin:14px 0}
+  .ico{width:14px;height:14px;border-radius:50%;background:#111}
+  @media (prefers-color-scheme: dark){.ico{background:#e9e9e9}}
+
+  /* Features */
+  .section{padding:36px 0}
+  .section h2{margin:0 0 8px}
+  .section p.lead{color:var(--muted);margin:0 0 18px}
+  .grid{
+    display:grid;gap:18px;grid-template-columns:repeat(3,1fr)
+  }
+  @media (max-width: 960px){.grid{grid-template-columns:1fr 1fr}}
+  @media (max-width: 640px){.grid{grid-template-columns:1fr}}
+  .feature{
+    background:var(--panel);border:1px solid var(--panel-br);border-radius:18px;padding:18px;
+    box-shadow:var(--shadow-sm)
+  }
+  .feature h3{margin:8px 0 6px;font-size:18px}
+  .feature p{margin:0;color:var(--muted)}
+
+  /* How it works */
+  .steps{display:grid;gap:14px;grid-template-columns:repeat(3,1fr)}
+  @media (max-width: 900px){.steps{grid-template-columns:1fr}}
+  .step{background:var(--panel);border:1px solid var(--panel-br);border-radius:16px;padding:16px;box-shadow:var(--shadow-sm)}
+  .num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700}
+
+  /* CTA band */
+  .callout{
+    margin:26px 0 10px;
+    background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 65%, white));
+    color:var(--accent-ink);
+    border-radius:18px;
+    padding:22px;
+    box-shadow:var(--shadow);
+  }
+  .callout .row{justify-content:space-between}
+  .callout .row p{margin:0}
+  .callout .btn{background:var(--accent-ink);color:#fff}
+
+  /* Footer */
+  footer{
+    margin-top:26px;padding:24px 0;color:var(--muted);border-top:1px solid var(--panel-br)
+  }
+  .footgrid{
+    display:grid;gap:16px;grid-template-columns:2fr 1fr 1fr
+  }
+  @media (max-width: 820px){.footgrid{grid-template-columns:1fr}}
+  footer a{color:var(--muted)}
+  .small{font-size:12px}
+</style>
+</head>
+<body>
+  <div class="container">
+    <!-- Top nav -->
+    <nav class="nav">
+      <div class="brand">
+        <span class="dot"></span>
+        <h1>Smart Contact Card</h1>
+      </div>
+      <div class="navActions">
+        <a class="btn ghost" href="/admin.html">Admin</a>
+        <a class="btn" href="/create.html">Create your card</a>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="heroCard">
+        <div class="heroGrid">
+          <div>
+            <h2 class="title">Your contact, one elegant link.</h2>
+            <p class="subtitle">Share a beautiful profile page with a real <strong>“Save contact”</strong> action that works on iOS and everywhere else.</p>
+            <div class="ctaRow">
+              <a class="btn" href="/create.html">Create your card</a>
+              <a class="btn ghost" href="/admin.html">Go to admin</a>
+            </div>
+          </div>
+          <!-- little mock card preview -->
+          <div class="mock" aria-hidden="true">
+            <div class="bar"><div class="badge">GA</div></div>
+            <div class="cardBody">
+              <div class="line" style="width:70%"></div>
+              <div class="line" style="width:40%;margin-top:6px"></div>
+              <div class="row"><span class="ico"></span><div class="line" style="width:65%"></div></div>
+              <div class="row"><span class="ico"></span><div class="line" style="width:54%"></div></div>
+              <div class="row"><span class="ico"></span><div class="line" style="width:48%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section">
+      <h2>Why people like it</h2>
+      <p class="lead">A fast, minimal card that saves correctly to Contacts on iPhone and Android.</p>
+      <div class="grid">
+        <div class="feature">
+          <h3>iOS-ready vCard</h3>
+          <p>We generate a standards-compliant .vcf that iPhone can save instantly — including photo, phone, email, website and address.</p>
+        </div>
+        <div class="feature">
+          <h3>Clean landing page</h3>
+          <p>Your public card URL shows your details with clear actions (call, email, open map, save contact).</p>
+        </div>
+        <div class="feature">
+          <h3>Logo / photo</h3>
+          <p>Upload your logo or headshot — we compress large images automatically so it loads fast.</p>
+        </div>
+        <div class="feature">
+          <h3>Shareable link</h3>
+          <p>Use it on business cards, email signatures, WhatsApp, Viber, QR, NFC, anywhere.</p>
+        </div>
+        <div class="feature">
+          <h3>Admin dashboard</h3>
+          <p>See all created cards and update them later. You stay in control.</p>
+        </div>
+        <div class="feature">
+          <h3>Privacy-friendly</h3>
+          <p>No trackers, no noise—just the data you enter, hosted on Netlify.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section">
+      <h2>How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>Fill the form</h3>
+          <p class="small">Name, title, company, phone, email, website, address and photo.</p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>Get your link</h3>
+          <p class="small">We create your page at <em>/card/&lt;slug&gt;</em> and generate your vCard behind the Save button.</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>Share everywhere</h3>
+          <p class="small">People view the page and press <strong>Save contact</strong>. Done.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA band -->
+    <section class="callout">
+      <div class="row">
+        <p><strong>Ready to make yours?</strong> Create a card in under a minute.</p>
+        <a class="btn" href="/create.html">Create your card</a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footgrid">
+        <div>
+          <div class="brand" style="margin-bottom:8px">
+            <span class="dot"></span><strong>Smart Contact Card</strong>
+          </div>
+          <p class="small">A tiny tool for instantly shareable contact pages with real iOS vCard support.</p>
+        </div>
+        <div>
+          <strong class="small">Product</strong><br/>
+          <a href="/create.html">Create a card</a><br/>
+          <a href="/admin.html">Admin</a><br/>
+        </div>
+        <div>
+          <strong class="small">Support</strong><br/>
+          <a href="/create.html#">Docs (soon)</a><br/>
+          <a href="/create.html#">Contact</a><br/>
+        </div>
+      </div>
+      <p class="small" style="margin-top:12px">&copy; <span id="y"></span> Smart Contact Card. All rights reserved.</p>
+    </footer>
+  </div>
+
+  <script>
+    // year
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
