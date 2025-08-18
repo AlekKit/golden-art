@@ -40,7 +40,6 @@
       min-height:100dvh;
     }
 
-    /* Header */
     .wrap{max-width:980px;margin:28px auto;padding:0 16px}
     header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
     .titleRow{display:flex;align-items:center;gap:10px}
@@ -54,7 +53,6 @@
     }
     .backLink:hover{transform:translateY(-1px);opacity:.95}
 
-    /* Card */
     .panel{
       background:var(--panel);
       border:1px solid var(--panel-br);
@@ -68,12 +66,26 @@
     @media(max-width:760px){.row{grid-template-columns:1fr}}
 
     label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
-    input[type=text],input[type=email],input[type=url],input[type=tel]{
-      width:100%;padding:12px 14px;border:1px solid var(--input-br);
-      border-radius:12px;background:var(--input-bg);color:inherit;outline:none;
+
+    /* Field with icon */
+    .field{position:relative}
+    .field input[type=text],
+    .field input[type=email],
+    .field input[type=url],
+    .field input[type=tel]{
+      width:100%;
+      padding:12px 14px 12px 46px; /* icon room */
+      border:1px solid var(--input-br);
+      border-radius:12px;
+      background:var(--input-bg);
+      color:inherit; outline:none;
       transition:border-color .15s ease, box-shadow .15s ease;
     }
-    input:focus{border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent)}
+    .field input:focus{border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent)}
+    .field svg{
+      position:absolute; left:14px; top:50%; transform:translateY(-50%);
+      width:18px; height:18px; opacity:.6; pointer-events:none;
+    }
 
     input[type=file]{display:block}
 
@@ -93,7 +105,6 @@
 
     .ok,.err{margin-top:10px;border-radius:12px;padding:12px;box-shadow:var(--shadow-sm);background:var(--panel)}
     .err{border-left:4px solid #d33}
-
   </style>
 </head>
 <body>
@@ -109,20 +120,69 @@
     <div class="panel">
       <form id="createForm">
         <div class="row">
-          <div><label for="name">Full name</label><input id="name" type="text" placeholder="Full name" required></div>
-          <div><label for="title">Job title</label><input id="title" type="text" placeholder="Job title"></div>
+          <div>
+            <label for="name">Full name</label>
+            <div class="field">
+              <!-- user icon -->
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5 0-9 2.5-9 5.5V22h18v-2.5C21 16.5 17 14 12 14Z"/></svg>
+              <input id="name" type="text" placeholder="Full name" required>
+            </div>
+          </div>
+          <div>
+            <label for="title">Job title</label>
+            <div class="field">
+              <!-- briefcase -->
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 6h-4V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v2h20V8a2 2 0 0 0-2-2ZM8 4h8v2H8Z"/><path d="M22 12H2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/></svg>
+              <input id="title" type="text" placeholder="Job title">
+            </div>
+          </div>
         </div>
+
         <div class="row">
-          <div><label for="company">Company</label><input id="company" type="text" placeholder="Company"></div>
-          <div><label for="phone">Phone</label><input id="phone" type="text" placeholder="+389 70 000 000"></div>
+          <div>
+            <label for="company">Company</label>
+            <div class="field">
+              <!-- building -->
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 21V3h8v4h10v14H3Zm2-2h6V5H5v14Zm8 0h6V9h-6v10Z"/></svg>
+              <input id="company" type="text" placeholder="Company">
+            </div>
+          </div>
+          <div>
+            <label for="phone">Phone</label>
+            <div class="field">
+              <!-- phone -->
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.62 10.79a15.46 15.46 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 .91-.27c1 .23 2.07.35 3.18.35a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.07 21 3 13.93 3 5a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.11.12 2.18.35 3.18a1 1 0 0 1-.27.91l-2.2 2.2Z"/></svg>
+              <input id="phone" type="text" placeholder="+389 70 000 000">
+            </div>
+          </div>
         </div>
+
         <div class="row">
-          <div><label for="email">Email</label><input id="email" type="email" placeholder="name@company.com"></div>
-          <div><label for="website">Website</label><input id="website" type="url" placeholder="https://yourwebsite.com"></div>
+          <div>
+            <label for="email">Email</label>
+            <div class="field">
+              <!-- mail -->
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2ZM4 8l8 5 8-5V6l-8 5L4 6Z"/></svg>
+              <input id="email" type="email" placeholder="name@company.com">
+            </div>
+          </div>
+          <div>
+            <label for="website">Website</label>
+            <div class="field">
+              <!-- globe -->
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm5 10a8 8 0 0 1-8 8c0-4.42 3.58-8 8-8Zm-5-8a8 8 0 0 1 8 8h-8Z"/></svg>
+              <input id="website" type="url" placeholder="https://yourwebsite.com">
+            </div>
+          </div>
         </div>
+
         <div>
           <label for="address">Work address</label>
-          <input id="address" type="text" placeholder="Street, City, Region, Postal, Country">
+          <div class="field">
+            <!-- pin -->
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"/></svg>
+            <input id="address" type="text" placeholder="Street, City, Region, Postal, Country">
+          </div>
         </div>
 
         <div>
@@ -143,7 +203,7 @@
     </div>
   </div>
 
-  <!-- ORIGINAL, UNCHANGED FUNCTIONALITY BELOW -->
+  <!-- Functionality preserved exactly -->
   <script>
     // --- helpers ---
     const $ = sel => document.querySelector(sel);
@@ -190,7 +250,7 @@
       }
     });
 
-    // submit
+    // submit (unchanged payload/flow; hides vCard endpoint in success)
     $('#createForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const msg = $('#msg'); msg.className=''; msg.textContent='';
@@ -224,13 +284,14 @@
         }
 
         const cardPath = out.card_url || `/card/${out.slug}`;
-        const vcfPath  = out.vcf_url  || `/.netlify/functions/vcf?slug=${out.slug}`;
         msg.className='ok';
         msg.innerHTML = `
           <strong>Your card is ready!</strong><br>
-          <a href="${cardPath}" target="_blank">${location.origin + cardPath}</a><br>
-          vCard endpoint: <a href="${vcfPath}" target="_blank">${location.origin + vcfPath}</a>
+          <a href="${cardPath}" target="_blank">${location.origin + cardPath}</a>
         `;
+        /* vCard endpoint intentionally hidden:
+           const vcfPath = out.vcf_url || '/.netlify/functions/vcf?slug='+out.slug;
+        */
       } catch (err) {
         msg.className='err'; msg.textContent = String(err?.message || err);
       }
