@@ -130,6 +130,9 @@
 
   /* Hide any vCard link your current JS might output */
   #result a[href*="/.netlify/functions/vcf"]{display:none!important}
+
+  /* back button wrapper */
+  .topNav{margin-bottom:18px}
 </style>
 </head>
 <body>
@@ -140,6 +143,10 @@
     </header>
 
     <div class="card">
+      <div class="topNav">
+        <a class="btn secondary" href="/">← Back to homepage</a>
+      </div>
+
       <!-- IDs preserved exactly so your JS keeps working -->
       <form id="createForm" onsubmit="return false;">
         <div class="grid-2">
@@ -215,7 +222,6 @@
 
         <div class="actions">
           <button id="generateBtn" class="btn">Generate</button>
-          <a class="btn secondary" href="/">Back to homepage</a>
           <span class="note">After generating, you’ll get the card URL below.</span>
         </div>
 
