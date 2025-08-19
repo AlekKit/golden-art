@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Smart Contact Card</title>
   <style>
-    /* ===== Theme tokens ===== */
     :root{
       --bg1:#e8f0ec; --bg2:#f6faf8;
       --panel:#ffffff; --panel-border:rgba(15,23,32,.08);
@@ -27,110 +26,61 @@
     }
 
     *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%}
     body{
       font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial;
       background:linear-gradient(180deg,var(--bg1),var(--bg2));
       color:var(--text);
       display:flex;flex-direction:column;
-      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+      min-height:100vh;
     }
 
-    /* Layout helpers */
     .container{max-width:1200px;margin:0 auto;padding:0 40px}
-    @media (max-width: 640px){
-      .container{padding:0 16px}
-    }
+    @media (max-width:640px){.container{padding:0 16px}}
 
     /* Header */
     header{
-      position:sticky; top:0; z-index:50;
-      background:linear-gradient(180deg,var(--bg1),var(--bg2));
-      backdrop-filter:saturate(180%) blur(8px);
       border-bottom:1px solid var(--panel-border);
+      background:linear-gradient(180deg,var(--bg1),var(--bg2));
     }
-    .headerInner{
-      display:flex;justify-content:space-between;align-items:center;
-      padding:12px 0; padding-top:calc(12px + env(safe-area-inset-top,0px));
-    }
-    .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px;line-height:1}
+    .headerInner{display:flex;justify-content:space-between;align-items:center;padding:16px 0}
+    .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px}
     .logoDot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
     nav{display:flex;align-items:center;gap:12px}
     .ctaBtn{
       background:var(--btn);color:var(--btnText);
       padding:12px 18px;border-radius:10px;text-decoration:none;
       font-weight:600;box-shadow:var(--shadow);
-      transition:transform .08s ease,opacity .15s ease;
       display:inline-flex;align-items:center;justify-content:center;
-      min-height:44px; /* better tap target */
+      min-height:44px;
     }
-    .ctaBtn:hover{transform:translateY(-1px);opacity:.95}
 
     /* Hero */
     .hero{
-      flex:1;
       display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:40px;
-      padding:48px 0;
+      padding:48px 0;flex:1;
     }
     .heroText h1{
       font-size:clamp(28px,6vw,44px);line-height:1.2;margin-bottom:14px;
-      letter-spacing:-0.02em;
     }
     .heroText p{font-size:clamp(15px,3.8vw,18px);color:var(--muted);margin-bottom:18px}
-    .heroActions{display:flex;gap:12px;flex-wrap:wrap}
     .heroImg{display:flex;justify-content:center}
-    .phoneMockup{
-      width:min(320px,82vw); height:560px;
-      border:10px solid #111;border-radius:32px;background:#fff;box-shadow:var(--shadow);
-      display:flex;align-items:center;justify-content:center;
-    }
-    .phoneMockup span{color:#aaa;font-size:14px}
-
-    /* Features section */
-    .features{
-      background:var(--panel);
-      border-top:1px solid var(--panel-border);
-      padding:48px 0;
-    }
-    .features h2{text-align:center;font-size:clamp(22px,5vw,28px);margin-bottom:28px}
-    .grid{
-      display:grid;gap:16px;grid-template-columns:repeat(3,1fr);
-    }
-    .feature{
-      background:var(--panel);
-      border:1px solid var(--panel-border);
-      border-radius:var(--radius);
-      padding:18px;
+    .heroImg img{
+      max-width:100%;
+      height:auto;
+      border-radius:20px;
       box-shadow:var(--shadow);
     }
-    .feature h3{margin-bottom:8px;font-size:17px}
-    .feature p{color:var(--muted);font-size:15px;line-height:1.5}
+    .heroActions{display:flex;gap:12px;flex-wrap:wrap}
 
-    /* Footer */
-    footer{
-      text-align:center;padding:18px;color:var(--muted);
-      border-top:1px solid var(--panel-border);font-size:14px
-    }
-
-    /* ===== Mobile first refinements ===== */
-    @media (max-width: 900px){
+    /* Mobile adjustments */
+    @media (max-width:900px){
       .hero{grid-template-columns:1fr;gap:28px}
-      /* show preview first on phones for faster context */
       .heroImg{order:1}
-      .heroText{order:2}
+      .heroText{order:2;text-align:center}
       .heroActions .ctaBtn{width:100%}
     }
-    @media (max-width: 640px){
-      .phoneMockup{height:min(520px,120vw)}
-      .grid{grid-template-columns:1fr}
-      .feature{padding:16px}
-      .headerInner{padding:10px 0}
-    }
 
-    /* Reduce heavy shadows on low-end devices */
-    @media (prefers-reduced-transparency: reduce){
-      header{backdrop-filter:none}
-    }
+    footer{text-align:center;padding:18px;color:var(--muted);border-top:1px solid var(--panel-border);font-size:14px}
   </style>
 </head>
 <body>
@@ -138,8 +88,7 @@
     <div class="container headerInner">
       <div class="logo"><span class="logoDot"></span> Smart Contact Card</div>
       <nav>
-        <!-- Features button removed per request -->
-        <a href="/create.html" class="ctaBtn" aria-label="Create your card">Create your card</a>
+        <a href="/create.html" class="ctaBtn">Create your card</a>
       </nav>
     </div>
   </header>
@@ -147,9 +96,8 @@
   <main class="container">
     <section class="hero">
       <div class="heroImg">
-        <div class="phoneMockup" role="img" aria-label="Contact card preview">
-          <span>Card preview</span>
-        </div>
+        <!-- Replace the placeholder with your uploaded image -->
+        <img src="image.png" alt="Smart Contact Card preview" />
       </div>
 
       <div class="heroText">
@@ -161,26 +109,6 @@
       </div>
     </section>
   </main>
-
-  <section class="features" id="features">
-    <div class="container">
-      <h2>Powerful features for seamless networking</h2>
-      <div class="grid">
-        <div class="feature">
-          <h3>Instant sharing</h3>
-          <p>One link works in QR codes, NFC, chat apps, emails, no complicated setup required.</p>
-        </div>
-        <div class="feature">
-          <h3>Always up to date</h3>
-          <p>Edit your details later and your card link stays the same, always showing the latest info.</p>
-        </div>
-        <div class="feature">
-          <h3>iOS-ready vCard</h3>
-          <p>Standards-compliant .vcf with photo, phone, email, website, and address that saves directly to Contacts.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <footer>
     © 2025 Smart Contact Card. All rights reserved.
