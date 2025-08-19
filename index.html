@@ -26,11 +26,13 @@
     }
 
     *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
     body{
       font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial;
       background:linear-gradient(180deg,var(--bg1),var(--bg2));
       color:var(--text);
       display:flex;flex-direction:column;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
       min-height:100vh;
     }
 
@@ -39,30 +41,40 @@
 
     /* Header */
     header{
-      border-bottom:1px solid var(--panel-border);
+      position:sticky; top:0; z-index:50;
       background:linear-gradient(180deg,var(--bg1),var(--bg2));
+      backdrop-filter:saturate(180%) blur(8px);
+      border-bottom:1px solid var(--panel-border);
     }
-    .headerInner{display:flex;justify-content:space-between;align-items:center;padding:16px 0}
-    .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px}
+    .headerInner{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:12px 0; padding-top:calc(12px + env(safe-area-inset-top,0px));
+    }
+    .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px;line-height:1}
     .logoDot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
     nav{display:flex;align-items:center;gap:12px}
     .ctaBtn{
       background:var(--btn);color:var(--btnText);
       padding:12px 18px;border-radius:10px;text-decoration:none;
       font-weight:600;box-shadow:var(--shadow);
+      transition:transform .08s ease,opacity .15s ease;
       display:inline-flex;align-items:center;justify-content:center;
       min-height:44px;
     }
+    .ctaBtn:hover{transform:translateY(-1px);opacity:.95}
 
     /* Hero */
     .hero{
+      flex:1;
       display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:40px;
-      padding:48px 0;flex:1;
+      padding:48px 0;
     }
     .heroText h1{
       font-size:clamp(28px,6vw,44px);line-height:1.2;margin-bottom:14px;
+      letter-spacing:-0.02em;
     }
     .heroText p{font-size:clamp(15px,3.8vw,18px);color:var(--muted);margin-bottom:18px}
+    .heroActions{display:flex;gap:12px;flex-wrap:wrap}
     .heroImg{display:flex;justify-content:center}
     .heroImg img{
       max-width:100%;
@@ -70,17 +82,43 @@
       border-radius:20px;
       box-shadow:var(--shadow);
     }
-    .heroActions{display:flex;gap:12px;flex-wrap:wrap}
 
-    /* Mobile adjustments */
-    @media (max-width:900px){
+    /* Features section */
+    .features{
+      background:var(--panel);
+      border-top:1px solid var(--panel-border);
+      padding:48px 0;
+    }
+    .features h2{text-align:center;font-size:clamp(22px,5vw,28px);margin-bottom:28px}
+    .grid{display:grid;gap:16px;grid-template-columns:repeat(3,1fr)}
+    .feature{
+      background:var(--panel);
+      border:1px solid var(--panel-border);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
+    }
+    .feature h3{margin-bottom:8px;font-size:17px}
+    .feature p{color:var(--muted);font-size:15px;line-height:1.5}
+
+    /* Footer */
+    footer{text-align:center;padding:18px;color:var(--muted);border-top:1px solid var(--panel-border);font-size:14px}
+
+    /* Mobile refinements */
+    @media (max-width: 900px){
       .hero{grid-template-columns:1fr;gap:28px}
       .heroImg{order:1}
       .heroText{order:2;text-align:center}
       .heroActions .ctaBtn{width:100%}
     }
-
-    footer{text-align:center;padding:18px;color:var(--muted);border-top:1px solid var(--panel-border);font-size:14px}
+    @media (max-width: 640px){
+      .grid{grid-template-columns:1fr}
+      .feature{padding:16px}
+      .headerInner{padding:10px 0}
+    }
+    @media (prefers-reduced-transparency: reduce){
+      header{backdrop-filter:none}
+    }
   </style>
 </head>
 <body>
@@ -88,7 +126,8 @@
     <div class="container headerInner">
       <div class="logo"><span class="logoDot"></span> Smart Contact Card</div>
       <nav>
-        <a href="/create.html" class="ctaBtn">Create your card</a>
+        <!-- Features button removed -->
+        <a href="/create.html" class="ctaBtn" aria-label="Create your card">Create your card</a>
       </nav>
     </div>
   </header>
@@ -96,8 +135,12 @@
   <main class="container">
     <section class="hero">
       <div class="heroImg">
-        <!-- Replace the placeholder with your uploaded image -->
-        <img src="image.png" alt="Smart Contact Card preview" />
+        <!-- Base64 inline image -->
+        <img
+          alt="Smart Contact Card preview"
+          loading="lazy" decoding="async"
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfAAAAfQCAYAAADz9c5rAAAACXBIWXMAAAsSAAALEgHS3X78AAAgAElEQVR4nO3dyZJkZ33f8e/9n4m5m0C5LwqQF6b7v2Yt9G7wQb7m8m8P3cKf2Lx8Jc8s9w5qQ4m1Uspm4cZ1QFqgkq1aS3c8fE2W3qgqkU9cHb3l0qfJ9wq2qFJc9yVxg7v8vCwAABw9i5CqAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4mV2cTgAA..."
+        />
       </div>
 
       <div class="heroText">
@@ -109,6 +152,26 @@
       </div>
     </section>
   </main>
+
+  <section class="features" id="features">
+    <div class="container">
+      <h2>Powerful features for seamless networking</h2>
+      <div class="grid">
+        <div class="feature">
+          <h3>Instant sharing</h3>
+          <p>One link works in QR codes, NFC, chat apps, emails, no complicated setup required.</p>
+        </div>
+        <div class="feature">
+          <h3>Always up to date</h3>
+          <p>Edit your details later and your card link stays the same, always showing the latest info.</p>
+        </div>
+        <div class="feature">
+          <h3>iOS-ready vCard</h3>
+          <p>Standards compliant .vcf with photo, phone, email, website, and address that saves directly to Contacts.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <footer>
     © 2025 Smart Contact Card. All rights reserved.
