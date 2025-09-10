@@ -8,6 +8,12 @@
     body{margin:0;background:#e6f0ec;font-family:ui-sans-serif,-apple-system,system-ui,Segoe UI,Arial}
     .phone{width:min(420px,92vw);margin:4vh auto;background:#fff;border-radius:28px;box-shadow:0 20px 70px rgba(0,0,0,.16);overflow:hidden;position:relative}
 
+    /* Loader */
+    #loader{
+      display:grid;place-items:center;height:100vh;
+      font-size:20px;color:#111;font-weight:500;
+    }
+
     /* hero / logo */
     .hero{background:#111;height:200px;display:grid;place-items:center;position:relative}
     .logo{width:140px;height:140px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden}
@@ -66,7 +72,11 @@
   </style>
 </head>
 <body>
-  <div class="phone">
+
+  <!-- Preloader -->
+  <div id="loader">Loading card...</div>
+
+  <div class="phone" id="cardContainer" style="display:none">
     <div class="hero">
       <div class="logo"><img id="logo" alt=""></div>
       <!-- Share button -->
@@ -160,95 +170,105 @@
   <script>
     (async () => {
       const byId = id => document.getElementById(id);
+      const loader = byId('loader');
+      const cardWrap = byId('cardContainer');
       const container = byId('card') || document.body;
 
       // slug from /card/<slug> or ?slug=
       const pathMatch = location.pathname.match(/\/card\/([^\/?#]+)/);
       const slug = (pathMatch && pathMatch[1]) || new URLSearchParams(location.search).get('slug');
-      if (!slug) { container.innerHTML = 'Card not found (missing slug)'; return; }
+      if (!slug) { loader.textContent = 'Card not found (missing slug)'; return; }
 
-      const r = await fetch('/.netlify/functions/get_profile?slug=' + encodeURIComponent(slug));
-      if (!r.ok) { container.innerHTML = 'Card not found'; return; }
-      const p = await r.json();
+      try {
+        const r = await fetch('/.netlify/functions/get_profile?slug=' + encodeURIComponent(slug));
+        if (!r.ok) { loader.textContent = 'Card not found'; return; }
+        const p = await r.json();
 
-      // Header
-      byId('name').textContent  = p.name || '';
-      byId('title').textContent = p.title || '';
-      byId('org').textContent   = p.company || '';
-      if (p.logo_base64) byId('logo').src = 'data:image/jpeg;base64,' + p.logo_base64;
+        // Header
+        byId('name').textContent  = p.name || '';
+        byId('title').textContent = p.title || '';
+        byId('org').textContent   = p.company || '';
+        if (p.logo_base64) byId('logo').src = 'data:image/jpeg;base64,' + p.logo_base64;
 
-      // Phone
-      if (p.phone) {
-        const row = byId('telRow');
-        row.style.display = 'grid';
-        row.href = 'tel:' + p.phone;
-        byId('telLink').textContent = p.phone;
+        // Phone
+        if (p.phone) {
+          const row = byId('telRow');
+          row.style.display = 'grid';
+          row.href = 'tel:' + p.phone;
+          byId('telLink').textContent = p.phone;
+        }
+
+        // Email
+        if (p.email) {
+          const row = byId('emailRow');
+          row.style.display = 'grid';
+          row.href = 'mailto:' + p.email;
+          byId('emailLink').textContent = p.email;
+        }
+
+        // Website
+        if (p.website) {
+          const row = byId('webRow');
+          row.style.display = 'grid';
+          const url = p.website.startsWith('http') ? p.website : ('https://' + p.website);
+          row.href = url;
+          byId('webLink').textContent = p.website.replace(/^https?:\/\/(www\.)?/, '');
+        }
+
+        // Address → open in maps
+        if (p.address) {
+          const row = byId('adrRow');
+          row.style.display = 'grid';
+          byId('adrText').textContent = p.address;
+          row.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.address);
+        }
+
+        // Save contact button
+        byId('saveBtn').addEventListener('click', (e) => {
+          e.preventDefault();
+          location.href = '/.netlify/functions/vcf?slug=' + encodeURIComponent(slug);
+        });
+
+        // ===== Share logic (non-intrusive) =====
+        const shareUrl = location.origin + '/card/' + slug;
+        const text = encodeURIComponent('My contact card: ' + shareUrl);
+
+        byId('shareLink').value = shareUrl;
+        byId('shareWa').href = 'https://wa.me/?text=' + text;
+        byId('shareLi').href = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(shareUrl);
+        byId('shareFb').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(shareUrl);
+        byId('shareX').href  = 'https://twitter.com/intent/tweet?text=' + text;
+
+        byId('shareMail').addEventListener('click', () => {
+          const subj = encodeURIComponent('My contact card');
+          const body = encodeURIComponent('Here is my contact card:\n\n' + shareUrl);
+          location.href = 'mailto:?subject=' + subj + '&body=' + body;
+        });
+        byId('shareSms').addEventListener('click', () => {
+          const body = encodeURIComponent('My contact card: ' + shareUrl);
+          location.href = 'sms:?&body=' + body;
+        });
+
+        byId('copyBtn').addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(shareUrl);
+            byId('copyBtn').textContent = 'Copied!';
+            setTimeout(() => byId('copyBtn').textContent = 'Copy', 1200);
+          } catch { /* ignore */ }
+        });
+
+        const modal = byId('shareModal');
+        byId('openShare').addEventListener('click', () => modal.style.display = 'flex');
+        byId('closeShare').addEventListener('click', () => modal.style.display = 'none');
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+        // Success: show card, hide loader
+        loader.style.display = 'none';
+        cardWrap.style.display = 'block';
+
+      } catch (err) {
+        loader.textContent = 'Could not load card.';
       }
-
-      // Email
-      if (p.email) {
-        const row = byId('emailRow');
-        row.style.display = 'grid';
-        row.href = 'mailto:' + p.email;
-        byId('emailLink').textContent = p.email;
-      }
-
-      // Website
-      if (p.website) {
-        const row = byId('webRow');
-        row.style.display = 'grid';
-        const url = p.website.startsWith('http') ? p.website : ('https://' + p.website);
-        row.href = url;
-        byId('webLink').textContent = p.website.replace(/^https?:\/\/(www\.)?/, '');
-      }
-
-      // Address → open in maps
-      if (p.address) {
-        const row = byId('adrRow');
-        row.style.display = 'grid';
-        byId('adrText').textContent = p.address;
-        row.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.address);
-      }
-
-      // Save contact button
-      byId('saveBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        location.href = '/.netlify/functions/vcf?slug=' + encodeURIComponent(slug);
-      });
-
-      // ===== Share logic (non-intrusive) =====
-      const shareUrl = location.origin + '/card/' + slug;
-      const text = encodeURIComponent('My contact card: ' + shareUrl);
-
-      byId('shareLink').value = shareUrl;
-      byId('shareWa').href = 'https://wa.me/?text=' + text;
-      byId('shareLi').href = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(shareUrl);
-      byId('shareFb').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(shareUrl);
-      byId('shareX').href  = 'https://twitter.com/intent/tweet?text=' + text;
-
-      byId('shareMail').addEventListener('click', () => {
-        const subj = encodeURIComponent('My contact card');
-        const body = encodeURIComponent('Here is my contact card:\n\n' + shareUrl);
-        location.href = 'mailto:?subject=' + subj + '&body=' + body;
-      });
-      byId('shareSms').addEventListener('click', () => {
-        const body = encodeURIComponent('My contact card: ' + shareUrl);
-        // sms: scheme works differently across platforms; this keeps it simple
-        location.href = 'sms:?&body=' + body;
-      });
-
-      byId('copyBtn').addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(shareUrl);
-          byId('copyBtn').textContent = 'Copied!';
-          setTimeout(() => byId('copyBtn').textContent = 'Copy', 1200);
-        } catch { /* ignore */ }
-      });
-
-      const modal = byId('shareModal');
-      byId('openShare').addEventListener('click', () => modal.style.display = 'flex');
-      byId('closeShare').addEventListener('click', () => modal.style.display = 'none');
-      modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
     })();
   </script>
 </body>
